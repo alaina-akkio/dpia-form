@@ -1,0 +1,3141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Data Protection Impact Assessment</title>
+<style>
+  /* ── Reset & base ───────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #222638;
+    --border:    #2e3248;
+    --accent:    #5b6cf9;
+    --accent-h:  #7b89fb;
+    --accent-dim:#5b6cf920;
+    --text:      #e2e4f0;
+    --text-2:    #9599b3;
+    --text-3:    #5a5f7a;
+    --success:   #34c97b;
+    --warn:      #f5a623;
+    --danger:    #f05252;
+    --radius:    10px;
+    --sidebar-w: 240px;
+    --font:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  html { font-size: 15px; }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    line-height: 1.6;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sidebar-logo {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid #5b6cf940;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+  .sidebar-logo h1 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .progress-bar-wrap {
+    padding: 10px 20px 0;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-2);
+    margin-bottom: 5px;
+  }
+  .progress-track {
+    height: 3px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-h));
+    border-radius: 3px;
+    transition: width .4s ease;
+  }
+
+  .nav-list {
+    list-style: none;
+    padding: 12px 0;
+    flex: 1;
+  }
+  .nav-list li {}
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-2);
+    border-left: 2px solid transparent;
+    transition: all .15s;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-left-color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-item.done { color: var(--success); }
+  .nav-item.done .nav-dot { background: var(--success); }
+
+  .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--text-3);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .15s;
+  }
+  .nav-item.active .nav-num {
+    background: var(--accent);
+    color: #fff;
+  }
+  .nav-item.done .nav-num {
+    background: var(--success);
+    color: #fff;
+  }
+
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    display: flex; gap: 8px;
+  }
+
+  /* ── Main content ────────────────────────────────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    backdrop-filter: blur(8px);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar h2 { font-size: 15px; font-weight: 600; }
+  .topbar-meta { font-size: 12px; color: var(--text-2); }
+
+  .content {
+    max-width: 860px;
+    padding: 40px 40px 100px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ── Section panels ──────────────────────────────────────────────────── */
+  .section-panel {
+    display: none;
+  }
+  .section-panel.active {
+    display: block;
+    animation: fadeIn .2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .section-header {
+    margin-bottom: 28px;
+  }
+  .section-header .section-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .section-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .section-header p {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.6;
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--text-2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Form fields ─────────────────────────────────────────────────────── */
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    letter-spacing: .02em;
+  }
+  label .req { color: var(--accent); margin-left: 2px; }
+  label .hint { font-weight: 400; color: var(--text-3); margin-left: 4px; font-size: 11px; }
+
+  input[type=text],
+  input[type=email],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13.5px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    appearance: none;
+  }
+
+  /* Date inputs — keep appearance so the native calendar picker works */
+  input[type=date] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13.5px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+    color-scheme: dark;
+  }
+  /* Lighten the calendar icon for dark backgrounds */
+  input[type=date]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7) brightness(1.4);
+    cursor: pointer;
+    opacity: 0.8;
+  }
+  input[type=date]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  input::placeholder, textarea::placeholder { color: var(--text-3); }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239599b3' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+  }
+
+  /* ── Smart suggestion panel ─────────────────────────────────────────── */
+  .suggest-panel {
+    display: none;
+    margin-top: 10px;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 9px;
+    overflow: hidden;
+    animation: fadeIn .2s ease;
+  }
+  .suggest-panel.visible { display: block; }
+
+  .suggest-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggest-spark {
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .suggest-header-text {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    flex: 1;
+  }
+  .suggest-dismiss {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 13px; padding: 2px 4px;
+    border-radius: 4px;
+    transition: color .15s;
+  }
+  .suggest-dismiss:hover { color: var(--text-2); }
+
+  .suggest-body { padding: 12px 14px 14px; }
+
+  .suggest-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggest-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .suggest-law-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    padding: 3px 7px;
+    border-radius: 5px;
+    margin-top: 1px;
+  }
+  .badge-gdpr { background: #5b6cf920; color: var(--accent); border: 1px solid #5b6cf940; }
+  .badge-ccpa { background: #34c97b18; color: var(--success); border: 1px solid #34c97b30; }
+
+  .suggest-content { flex: 1; }
+  .suggest-basis {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+  .suggest-reason {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.5;
+  }
+  .suggest-reason strong { color: var(--text); font-weight: 600; }
+
+  .suggest-apply {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-2);
+    font-size: 11.5px;
+    font-family: var(--font);
+    font-weight: 600;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all .15s;
+    margin-top: 1px;
+  }
+  .suggest-apply:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .suggest-apply.applied {
+    border-color: var(--success);
+    color: var(--success);
+    background: #34c97b12;
+  }
+
+  .suggest-confidence {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--surface2);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .conf-dots { display: flex; gap: 3px; }
+  .conf-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--border);
+  }
+  .conf-dot.on { background: var(--accent); }
+  .conf-dot.warn { background: var(--warn); }
+
+  /* ── Risk table ──────────────────────────────────────────────────────── */
+  .risk-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .risk-table th {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .risk-table tr.risk-row:hover td { background: var(--surface2); }
+  .risk-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    transition: background .1s;
+  }
+  .risk-table td:first-child { padding-left: 0; }
+  .risk-table td select,
+  .risk-table td input[type=text],
+  .risk-table td textarea {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+  .risk-table td textarea { min-height: 56px; }
+  .risk-label { font-size: 12.5px; color: var(--text); line-height: 1.4; padding-top: 4px; }
+  .risk-sub { font-size: 11px; color: var(--text-3); }
+
+  .badge-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .pill-low  { background: #34c97b20; color: #34c97b; }
+  .pill-med  { background: #f5a62320; color: #f5a623; }
+  .pill-high { background: #f0525220; color: #f05252; }
+
+  /* ── Tooltip cursor hint (panel rendered by JS — works on inputs too) ── */
+  [data-tooltip] { cursor: help; }
+  #global-tt {
+    position: fixed;
+    z-index: 99999;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.6;
+    padding: 8px 13px;
+    border-radius: 8px;
+    pointer-events: none;
+    max-width: 320px;
+    white-space: normal;
+    box-shadow: 0 6px 24px rgba(0,0,0,.65);
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0;
+    transition: opacity .16s ease;
+    display: none;
+  }
+
+  /* ── Inline suggestion chip (reused for vuln + safeguard suggests) ────── */
+  .inline-suggest {
+    display: none;
+    margin-top: 7px;
+    padding: 7px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 12px;
+    color: var(--text-2);
+    display: none;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .inline-suggest.visible { display: flex; }
+  .inline-suggest .is-spark { font-size: 13px; }
+  .inline-suggest .is-text { flex: 1; color: var(--text-2); }
+  .inline-suggest .is-apply {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid #5b6cf940;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .15s;
+  }
+  .inline-suggest .is-apply:hover { background: #5b6cf930; }
+  .inline-suggest .is-dismiss {
+    background: none;
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    line-height: 1;
+  }
+  .inline-suggest .is-dismiss:hover { color: var(--text-2); }
+
+  /* ── CCPA auto-note ───────────────────────────────────────────────────── */
+  .ccpa-auto-note {
+    display: none;
+    margin-top: 8px;
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-style: italic;
+  }
+  .ccpa-auto-note.visible { display: block; }
+
+  /* ── Data flows table ────────────────────────────────────────────────── */
+  .flows-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .flows-table th {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--text-3);
+    padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border);
+  }
+  .flows-table td {
+    padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  .flows-table td input, .flows-table td select {
+    font-size: 12px; padding: 6px 8px;
+  }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 14px; padding: 4px;
+    border-radius: 4px; transition: color .15s, background .15s;
+  }
+  .icon-btn:hover { color: var(--danger); background: #f0525210; }
+  .add-row-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px dashed var(--border);
+    border-radius: 7px; color: var(--text-2);
+    font-size: 12.5px; font-family: var(--font);
+    padding: 8px 14px; cursor: pointer; width: 100%; margin-top: 8px;
+    transition: border-color .15s, color .15s;
+  }
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Role color system ───────────────────────────────────────────────── */
+  .role-banner {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12px; font-weight: 600; line-height: 1.4;
+    padding: 10px 14px; border-radius: 8px;
+    margin-bottom: 22px; border: 1px solid;
+  }
+  .role-banner-owner {
+    background: #10b98110; color: #10b981; border-color: #10b98130;
+  }
+  .role-banner-legal {
+    background: #5b6cf910; color: #8b96fb; border-color: #5b6cf930;
+  }
+  .role-banner-mixed {
+    background: #f5a62310; color: #f5a623; border-color: #f5a62330;
+  }
+  .role-banner .role-icon { font-size: 15px; flex-shrink: 0; }
+  .role-banner .role-note { font-weight: 400; opacity: .8; margin-left: 2px; }
+
+  /* Left-border accent on cards by role */
+  .card-owner { border-left: 3px solid #10b981; }
+  .card-legal { border-left: 3px solid var(--accent); }
+
+  /* Small chip shown next to card-title */
+  .role-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
+    margin-left: 10px; vertical-align: middle;
+  }
+  .chip-owner { background: #10b98118; color: #10b981; border: 1px solid #10b98130; }
+  .chip-legal { background: #5b6cf918; color: #8b96fb; border: 1px solid #5b6cf930; }
+
+  /* Nav role dots */
+  .nav-role { display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:auto; flex-shrink:0; }
+  .nav-role-owner { background: #10b981; }
+  .nav-role-legal { background: var(--accent); }
+
+  /* Nav legend */
+  .nav-legend {
+    display: flex; gap: 10px; padding: 6px 14px 12px;
+    font-size: 10.5px; color: var(--text-3); flex-wrap: wrap;
+  }
+  .nav-legend span { display: flex; align-items: center; gap: 5px; }
+  .nav-legend .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+
+  /* Submit to Legal button */
+  .submit-legal-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; margin-top: 8px;
+    background: #10b98118; border: 1.5px solid #10b98140;
+    border-radius: 10px; color: #10b981; font-size: 14px; font-weight: 700;
+    font-family: var(--font); cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  .submit-legal-btn:hover { background: #10b98128; border-color: #10b98170; }
+  .submit-legal-btn.submitted {
+    background: #5b6cf918; border-color: #5b6cf940; color: #8b96fb; cursor: default;
+  }
+
+  /* ── Signoff table ───────────────────────────────────────────────────── */
+  .signoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .signoff-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .signoff-role { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 7px;
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none; transition: all .15s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent); color: #fff;
+  }
+  .btn-primary:hover { background: var(--accent-h); transform: translateY(-1px); box-shadow: 0 4px 16px #5b6cf940; }
+  .btn-ghost {
+    background: transparent; color: var(--text-2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-success {
+    background: var(--success); color: #fff;
+  }
+  .btn-danger {
+    background: transparent; color: var(--danger);
+    border: 1px solid #f0525230;
+  }
+  .btn-danger:hover { background: #f0525215; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .nav-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Summary / export ────────────────────────────────────────────────── */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .summary-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .summary-stat .val { font-size: 28px; font-weight: 700; color: var(--accent); }
+  .summary-stat .lbl { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+
+  .export-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+
+  /* ── Toast ───────────────────────────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    box-shadow: 0 8px 32px #0008;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all .3s ease;
+    z-index: 9999;
+    display: flex; align-items: center; gap: 10px;
+    min-width: 220px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast .toast-icon { font-size: 16px; }
+
+  /* ── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 700px) {
+    .sidebar { transform: translateX(-100%); }
+    .main { margin-left: 0; }
+    .content { padding: 20px 16px 80px; }
+    .topbar { padding: 12px 16px; }
+    .field-row, .field-row-3, .summary-grid, .signoff-grid { grid-template-columns: 1fr; }
+  }
+
+  @media print {
+    .sidebar, .topbar, .nav-actions, #toast { display: none !important; }
+    .main { margin-left: 0; }
+    .section-panel { display: block !important; page-break-inside: avoid; }
+    body { background: #fff; color: #000; }
+    .card { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="badge">⚖ Legal &amp; Privacy</div>
+    <h1>Data Protection<br>Impact Assessment</h1>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-label">
+      <span>Progress</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="nav-legend">
+    <span><span class="dot" style="background:#10b981"></span> Business Owner</span>
+    <span><span class="dot" style="background:#5b6cf9"></span> Legal / DPO</span>
+  </div>
+  <ul class="nav-list" id="nav-list">
+    <li><div class="nav-item active" onclick="goTo(0)"><span class="nav-num">→</span>Data Request<span class="nav-role nav-role-owner" title="Business Owner"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(1)"><span class="nav-num">1</span>Legal Basis<span class="nav-role nav-role-legal" title="Legal / DPO"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(2)"><span class="nav-num">2</span>Necessity &amp; Proportionality<span class="nav-role nav-role-legal" title="Legal / DPO"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(3)"><span class="nav-num">3</span>Risk Assessment<span class="nav-role nav-role-legal" title="Legal / DPO"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(4)"><span class="nav-num">4</span>Consultation<span class="nav-role nav-role-legal" title="Legal / DPO"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(5)"><span class="nav-num">5</span>Sign-Off<span class="nav-role nav-role-legal" title="Legal / DPO"></span></div></li>
+    <li><div class="nav-item" onclick="goTo(6)"><span class="nav-num">✓</span>Review &amp; Export</div></li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <button class="btn btn-ghost btn-sm" onclick="clearAll()" style="flex:1">Clear</button>
+    <button class="btn btn-ghost btn-sm" onclick="saveLocal()" style="flex:1">Save</button>
+  </div>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════════════════════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span id="topbar-section" style="font-size:13px;color:var(--text-2)">Section 1 of 6</span>
+      <span style="color:var(--border)">|</span>
+      <span class="topbar-meta">GDPR Art. 35 · CCPA / CPRA</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Save to Drive</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ SECTION 1: DATA REQUEST (BUSINESS OWNER) ═══════════════════════ -->
+    <div class="section-panel active" id="panel-0">
+      <div class="section-header">
+        <div class="section-num">Your submission</div>
+        <h2>Data Request Form</h2>
+        <p>Fill in the details below about the new tool, partnership, or data use. When you're done, hit <strong style="color:#10b981">Submit to Legal</strong> at the bottom — the legal team will handle the rest.</p>
+      </div>
+
+      <div class="role-banner role-banner-owner">
+        <span class="role-icon">👤</span>
+        <span><strong>Business Owner — this is your only page.</strong> <span class="role-note">Complete all fields below and click "Submit to Legal." You don't need to fill in anything else.</span></span>
+      </div>
+
+      <div class="card card-owner">
+        <div class="card-title">Project Details <span class="role-chip chip-owner">👤 Business Owner</span></div>
+        <div class="field">
+          <label>Project / Initiative Name <span class="req">*</span></label>
+          <input type="text" id="proj-name" placeholder="e.g. Customer Analytics Platform v2" oninput="autosave(); debouncedTriggerSuggest()" />
+        </div>
+        <div class="field">
+          <label>Description <span class="req">*</span>
+            <span class="hint">— what does this project do, why does it need personal data, and what tools or technologies are involved?</span>
+          </label>
+          <textarea id="proj-desc" placeholder="e.g. A new analytics pipeline that ingests clickstream data from our website and app to build personalised product recommendations for logged-in users, using Segment for data collection and Snowflake for storage. The goal is to increase conversion by surfacing relevant products at the right time." oninput="autosave(); debouncedTriggerSuggest(); debouncedAnalyze()"></textarea>
+        </div>
+        <div class="field">
+          <label>Business Owner <span class="req">*</span></label>
+          <input type="text" id="proj-owner" placeholder="Name, title, department" oninput="autosave()" />
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Date Initiated</label>
+            <input type="date" id="proj-date-start" oninput="autoSetReviewDate(); autosave();" />
+          </div>
+          <div class="field">
+            <label>Next Review Date <span style="font-size:11px;font-weight:400;color:var(--text-3);text-transform:none;letter-spacing:0;">(auto-set to 1 year after initiation)</span></label>
+            <input type="date" id="proj-date-review" oninput="this.dataset.edited='1'; syncReviewDate(); autosave();" />
+          </div>
+        </div>
+        <div class="field" style="display:none"><select id="proj-status" onchange="autosave()"><option>Under Review</option><option>Draft</option><option>Approved</option><option>Closed</option><option>Submitted for Legal Review</option></select></div>
+        <div class="field">
+          <label>Reason for Review
+            <span class="hint">— we'll suggest this from your description above</span>
+          </label>
+          <div id="trigger-suggest-wrap" style="display:none; margin-bottom:8px;">
+            <div style="display:flex; align-items:center; gap:8px; background:var(--accent-dim); border:1px solid #5b6cf940; border-radius:7px; padding:8px 12px; font-size:12px; color:var(--accent);">
+              <span style="font-size:13px;">✦</span>
+              <span id="trigger-suggest-text" style="flex:1;"></span>
+              <button onclick="applyTriggerSuggestion()" style="background:var(--accent);color:#fff;border:none;border-radius:5px;padding:4px 10px;font-size:11.5px;font-weight:600;font-family:var(--font);cursor:pointer;">Apply ↗</button>
+              <button onclick="document.getElementById('trigger-suggest-wrap').style.display='none'" style="background:none;border:none;color:var(--text-3);cursor:pointer;font-size:12px;padding:2px 4px;">✕</button>
+            </div>
+          </div>
+          <select id="proj-trigger" onchange="autosave()">
+            <option value="">Select reason</option>
+            <option>New system or product</option>
+            <option>Significant change to existing system</option>
+            <option>Large-scale processing of personal data</option>
+            <option>Systematic monitoring</option>
+            <option>Processing sensitive / special category data (Art. 9)</option>
+            <option>Profiling or automated decision-making</option>
+            <option>Cross-border data transfer</option>
+            <option>New technology deployment</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card card-owner">
+        <div class="card-title">Scope &amp; Context <span class="role-chip chip-owner">👤 Business Owner</span></div>
+        <div class="field-row">
+          <div class="field">
+            <label>Geographic scope</label>
+            <input type="text" id="scope-geo" placeholder="e.g. EU, UK, California, Global" oninput="autosave()" />
+            <div class="inline-suggest" id="geo-suggest-wrap">
+              <span class="is-spark">🌍</span>
+              <span class="is-text" id="geo-suggest-text"></span>
+              <button class="is-apply" onclick="applyGeoSuggestion()">Apply ↗</button>
+              <button class="is-dismiss" onclick="document.getElementById('geo-suggest-wrap').classList.remove('visible')">✕</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Duration of processing</label>
+            <input type="text" id="scope-dur" placeholder="e.g. Ongoing — data retained 12 months" oninput="autosave()" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Estimated volume of data subjects</label>
+            <input type="text" id="scope-vol" placeholder="e.g. ~50,000 EU users" oninput="autosave()" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-owner">
+        <div class="card-title">Personal Data Involved <span class="role-chip chip-owner">👤 Business Owner</span></div>
+        <table class="flows-table" id="data-table">
+          <thead>
+            <tr>
+              <th style="width:30%">Data Category</th>
+              <th style="width:16%">Sensitive? <span style="font-weight:400;opacity:.7">(auto-detected)</span></th>
+              <th style="width:24%">Source</th>
+              <th style="width:22%">Suggested Retention <span style="font-weight:400;opacity:.7">(confirm or edit)</span></th>
+              <th style="width:8%"></th>
+            </tr>
+          </thead>
+          <tbody id="data-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addDataRow()">+ Add data category</button>
+      </div>
+
+      <div class="card card-owner">
+        <div class="card-title">Data Subjects <span class="role-chip chip-owner">👤 Business Owner</span></div>
+        <div class="field">
+          <label>Categories of data subjects</label>
+          <input type="text" id="ds-cats" placeholder="e.g. customers, employees, minors, California consumers" oninput="autosave(); suggestVulnGroup(); suggestSafeguards();" />
+          <div class="inline-suggest" id="ds-cats-suggest-wrap">
+            <span class="is-spark">👥</span>
+            <span class="is-text" id="ds-cats-suggest-text"></span>
+            <button class="is-apply" onclick="applyDataSubjectsSuggestion()">Apply ↗</button>
+            <button class="is-dismiss" onclick="document.getElementById('ds-cats-suggest-wrap').classList.remove('visible')">✕</button>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Vulnerable groups involved?</label>
+            <select id="ds-vuln" onchange="autosave(); toggleSafeguardField(); suggestSafeguards()">
+              <option value="">Select</option>
+              <option>No</option>
+              <option>Yes — children</option>
+              <option>Yes — elderly</option>
+              <option>Yes — other vulnerable groups</option>
+            </select>
+            <div class="inline-suggest" id="vuln-suggest-wrap">
+              <span class="is-spark">🔍</span>
+              <span class="is-text" id="vuln-suggest-text"></span>
+              <button class="is-apply" onclick="applyVulnSuggestion()">Apply ↗</button>
+              <button class="is-dismiss" onclick="document.getElementById('vuln-suggest-wrap').classList.remove('visible')">✕</button>
+            </div>
+          </div>
+          <div class="field" id="safeguard-field" style="display:none">
+            <label>Safeguards for vulnerable groups</label>
+            <input type="text" id="ds-safeguard" placeholder="Describe safeguards if applicable" oninput="autosave()" />
+            <div class="inline-suggest" id="safeguard-suggest-wrap">
+              <span class="is-spark">🛡</span>
+              <span class="is-text" id="safeguard-suggest-text"></span>
+              <button class="is-apply" onclick="applySafeguardSuggestion()">Apply ↗</button>
+              <button class="is-dismiss" onclick="document.getElementById('safeguard-suggest-wrap').classList.remove('visible')">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>CCPA consumer rights applicable</label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;" id="ccpa-rights-wrap">
+            <label data-tooltip="Applies whenever you collect personal info from California consumers. Consumers may request disclosure of what is collected, used, sold, or shared about them." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Know" checked onchange="autosave()"> Right to Know</label>
+            <label data-tooltip="Applies whenever you hold personal info. Consumers may request deletion of their personal info from your business and service providers (subject to legal exceptions)." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Delete" checked onchange="autosave()"> Right to Delete</label>
+            <label data-tooltip="Only applies if you sell or share personal info for cross-context behavioural advertising. Uncheck if Akkio does not sell or share data with third-party advertisers." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Opt-Out" checked onchange="autosave()"> Right to Opt-Out</label>
+            <label data-tooltip="Applies whenever you maintain personal info. Consumers may request correction of inaccurate personal info held by your business." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Correct" checked onchange="autosave()"> Right to Correct</label>
+            <label data-tooltip="Only applies if you collect sensitive personal info (health data, precise location, race/ethnicity, financial accounts, etc.). Uncheck if no sensitive PI is involved." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Limit" checked onchange="autosave()"> Right to Limit Use</label>
+            <label data-tooltip="Applies whenever you collect personal info. Consumers may request a portable copy of their personal info to transfer to another service." style="display:flex;align-items:center;gap:6px;font-weight:400;color:var(--text);font-size:13px;letter-spacing:0;text-transform:none;cursor:pointer"><input type="checkbox" value="Portability" checked onchange="autosave()"> Right to Portability</label>
+          </div>
+          <div class="ccpa-auto-note visible" id="ccpa-auto-note">All rights pre-checked — uncheck any that don't apply. Hover each right for guidance on when exceptions apply.</div>
+        </div>
+      </div>
+
+      <div class="card card-owner">
+        <div class="card-title">Third Party Data Flows <span class="role-chip chip-owner">👤 Business Owner</span></div>
+        <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;">List any vendors, partners, or tools that will receive or process this data (e.g. Salesforce, Facebook, AWS). Leave blank if none.</p>
+        <table class="flows-table" id="flows-table">
+          <thead>
+            <tr>
+              <th style="width:25%">Recipient / Vendor</th>
+              <th style="width:20%">Role</th>
+              <th style="width:25%">Transfer Mechanism</th>
+              <th style="width:22%">DPA / Contract</th>
+              <th style="width:8%"></th>
+            </tr>
+          </thead>
+          <tbody id="flows-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFlowRow()">+ Add third party</button>
+      </div>
+
+      <div style="margin: 32px 0 8px;">
+        <button class="submit-legal-btn" id="submit-legal-btn" onclick="submitToLegal()">
+          ✉ Submit to Legal for Review
+        </button>
+        <p style="text-align:center;font-size:11.5px;color:var(--text-3);margin-top:8px;">
+          This will email a summary to the legal team and mark this DPIA as <strong style="color:#8b96fb">Submitted for Legal Review</strong>.
+        </p>
+      </div>
+
+      <div class="nav-actions" style="justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="goTo(1)" style="font-size:12px;opacity:.5;">Legal review sections →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 2: LEGAL BASIS ═════════════════════════════════════════ -->
+    <div class="section-panel" id="panel-1">
+      <div class="section-header">
+        <div class="section-num">Legal — Section 1 of 5</div>
+        <h2>Legal Basis</h2>
+        <p>Determine the legal basis for processing under GDPR Art. 6 and the applicable CCPA business purpose.</p>
+      </div>
+
+      <div class="role-banner role-banner-legal">
+        <span class="role-icon">⚖️</span>
+        <span><strong>Legal / DPO — complete sections 1–5 to finish the DPIA.</strong> <span class="role-note">Review the business owner's submission, then work through each section below.</span></span>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">Legal Basis <span class="role-chip chip-legal">⚖ Legal</span></div>
+
+        <!-- ── Smart suggestion panel (driven by Description on page 1) ── -->
+        <div class="suggest-panel" id="suggest-panel" style="margin-bottom:16px;">
+          <div class="suggest-header">
+            <span class="suggest-spark">✦</span>
+            <span class="suggest-header-text">Suggested legal basis — based on the description</span>
+            <button class="suggest-dismiss" onclick="dismissSuggestion()" title="Dismiss">✕</button>
+          </div>
+          <div class="suggest-body" id="suggest-body"></div>
+          <div class="suggest-confidence" id="suggest-confidence"></div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>GDPR legal basis (Art. 6) <span class="req">*</span></label>
+            <select id="purp-gdpr" onchange="this.dataset.edited='1'; autosave(); toggleLIField()">
+              <option value="">Select basis</option>
+              <option>Consent (Art. 6(1)(a))</option>
+              <option>Contract (Art. 6(1)(b))</option>
+              <option>Legal obligation (Art. 6(1)(c))</option>
+              <option>Vital interests (Art. 6(1)(d))</option>
+              <option>Public task (Art. 6(1)(e))</option>
+              <option>Legitimate interests (Art. 6(1)(f))</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>CCPA business purpose</label>
+            <select id="purp-ccpa" onchange="this.dataset.edited='1'; autosave()">
+              <option value="">Select purpose</option>
+              <option>Providing requested service or product</option>
+              <option>Security and fraud prevention</option>
+              <option>Debugging / error repair</option>
+              <option>Internal research or analytics</option>
+              <option>Quality assurance</option>
+              <option>Advertising or marketing</option>
+              <option>Other disclosed purpose</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" id="lia-field" style="display:none; overflow:hidden; transition: all .25s ease;">
+          <label>Legitimate interests assessment (LIA) <span class="req">*</span>
+            <span class="hint">— required when Art. 6(1)(f) is selected</span>
+          </label>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:10px 12px;margin-bottom:8px;font-size:12px;color:var(--text-2);line-height:1.6;">
+            Complete the three-part test: <strong style="color:var(--text)">1. Purpose</strong> — what is the legitimate interest?&nbsp;&nbsp;<strong style="color:var(--text)">2. Necessity</strong> — is processing needed to achieve it?&nbsp;&nbsp;<strong style="color:var(--text)">3. Balancing</strong> — do your interests override the individual's rights and freedoms?
+          </div>
+          <textarea id="purp-lit" placeholder="e.g. Purpose: prevent fraud and protect our platform. Necessity: we need behavioural data to detect anomalies. Balancing: minimal data used; individuals can object; no sensitive data involved. Outcome: interest prevails." oninput="autosave()"></textarea>
+        </div>
+        <div class="field" id="cross-context-field">
+          <label>Is personal data sold or shared for cross-context advertising? (CCPA)</label>
+          <select id="purp-sold" onchange="autosave()">
+            <option value="">Select</option>
+            <option>No</option>
+            <option>Yes — opt-out mechanism in place</option>
+            <option>Yes — opt-out mechanism to be implemented</option>
+          </select>
+          <div id="cross-context-alert" style="display:none; margin-top:8px; background:#f5a62312; border:1px solid #f5a62340; border-radius:7px; padding:10px 12px; font-size:12px; color:#f5a623; line-height:1.6;">
+            <strong>⚠ Cross-context advertising detected</strong> — Based on your description, this processing may qualify as "selling or sharing" under CCPA/CPRA. You are required to: (1) disclose this in your privacy policy, (2) provide a clear "Do Not Sell or Share My Personal Information" opt-out link, and (3) honour opt-out requests within 15 business days. Select your opt-out status above.
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost" onclick="goTo(0)">← Data Request</button>
+        <button class="btn btn-primary" onclick="goTo(2)">Next: Necessity →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 3: NECESSITY ══════════════════════════════════════════ -->
+    <div class="section-panel" id="panel-2">
+      <div class="section-header">
+        <div class="section-num">Section 3</div>
+        <h2>Necessity &amp; Proportionality</h2>
+        <p>Demonstrate that personal data processing is necessary, proportionate, and uses the least privacy-invasive approach.</p>
+      </div>
+
+      <div class="role-banner role-banner-legal">
+        <span class="role-icon">⚖️</span>
+        <span><strong>Legal / DPO — this section is completed by the legal team.</strong> <span class="role-note">Assess necessity, proportionality, and privacy-by-design measures.</span></span>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">Necessity Assessment <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field">
+          <label>Is processing necessary for the stated purpose? <span class="req">*</span></label>
+          <select id="nec-necessary" onchange="autosave()">
+            <option value="">Select</option>
+            <option>Yes — explain below</option>
+            <option>No — processing must be reconsidered</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Explanation</label>
+          <textarea id="nec-nec-exp" placeholder="Explain why this processing is necessary and proportionate to the purpose…" oninput="autosave()"></textarea>
+        </div>
+        <div class="field">
+          <label>Could a less privacy-intrusive approach achieve the same goal?</label>
+          <select id="nec-alt" onchange="autosave()">
+            <option value="">Select</option>
+            <option>No — no viable alternatives identified</option>
+            <option>Yes — alternative selected (describe below)</option>
+            <option>Yes — alternative rejected (explain below)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Alternatives considered</label>
+          <textarea id="nec-alt-exp" placeholder="Describe any alternatives that were considered and why they were accepted or rejected…" oninput="autosave()"></textarea>
+        </div>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">Data Minimization &amp; Privacy by Design <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field">
+          <label>Is data minimized to what is strictly necessary?</label>
+          <select id="nec-min" onchange="autosave()">
+            <option value="">Select</option>
+            <option>Yes</option>
+            <option>Partially — further minimization planned</option>
+            <option>No — justification required</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Privacy by design measures implemented</label>
+          <textarea id="nec-pbd" placeholder="e.g. pseudonymization, anonymization, access controls, encryption, data minimization at collection point…" oninput="autosave()"></textarea>
+          <div class="inline-suggest" id="pbd-suggest-wrap">
+            <span class="is-spark">🛡</span>
+            <span class="is-text" id="pbd-suggest-text"></span>
+            <button class="is-apply" onclick="applyPBDSuggestion()">Apply ↗</button>
+            <button class="is-dismiss" onclick="document.getElementById('pbd-suggest-wrap').classList.remove('visible')">✕</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>CCPA data minimization / purpose limitation</label>
+          <select id="nec-ccpa-min" onchange="autosave()">
+            <option value="">Select</option>
+            <option>Confirmed — data used only for disclosed business purpose</option>
+            <option>Partially confirmed — some uses under review</option>
+            <option>Not confirmed — remediation required</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost" onclick="goTo(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(3)">Next: Risk Assessment →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 4: RISK ASSESSMENT ════════════════════════════════════ -->
+    <div class="section-panel" id="panel-3">
+      <div class="section-header">
+        <div class="section-num">Section 4</div>
+        <h2>Risk Assessment</h2>
+        <p>Identify and score privacy risks. Rate Likelihood and Severity as Low, Medium, or High. Overall = combined judgment.</p>
+      </div>
+
+      <div class="role-banner role-banner-legal">
+        <span class="role-icon">⚖️</span>
+        <span><strong>Legal / DPO — this section is completed by the legal team.</strong> <span class="role-note">Score each privacy risk and record mitigations.</span></span>
+      </div>
+
+      <div class="card card-legal" style="overflow-x:auto;">
+        <div class="card-title">Risk Register <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <table class="risk-table" id="risk-table">
+          <thead>
+            <tr>
+              <th style="width:26%">Risk</th>
+              <th style="width:13%">Likelihood</th>
+              <th style="width:13%">Severity</th>
+              <th style="width:13%">Overall</th>
+              <th style="width:35%">Mitigation / Control</th>
+            </tr>
+          </thead>
+          <tbody id="risk-tbody"></tbody>
+          <tfoot>
+            <tr id="add-risk-row">
+              <td colspan="5" style="padding:6px 8px 8px;border-top:1px solid var(--border);">
+                <button class="add-row-btn" onclick="addRiskRow()" style="margin:0;">+ Add custom risk</button>
+              </td>
+            </tr>
+            <tr id="overall-risk-row" style="border-top:2px solid var(--border);">
+              <td colspan="3" style="padding:12px 8px 10px;text-align:right;font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-2);">Overall Risk</td>
+              <td style="padding:12px 8px 10px;"><span id="risk-overall-badge" style="font-size:12px;color:var(--text-3);">—</span></td>
+              <td style="padding:12px 8px 10px;font-size:11.5px;color:var(--text-3);font-style:italic;" id="risk-overall-note"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="card card-legal" id="residual-risk-card" style="display:none">
+        <div class="card-title">Residual Risk <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field-row">
+          <div class="field">
+            <label>Residual risk level after mitigations</label>
+            <select id="res-level" onchange="this.dataset.edited='1'; autosave()">
+              <option value="">Select</option>
+              <option>Low — acceptable, proceed</option>
+              <option>Medium — proceed with monitoring</option>
+              <option>High — DPO approval required</option>
+              <option>Very High — do not proceed without supervisory authority consultation</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Is residual risk acceptable?</label>
+            <select id="res-ok" onchange="autosave()">
+              <option value="">Select</option>
+              <option>Yes</option>
+              <option>No — processing must not proceed</option>
+              <option>Conditional — see further measures</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>Further measures required before go-live</label>
+          <textarea id="res-measures" placeholder="List any outstanding actions, owners, and target dates…" oninput="autosave()"></textarea>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost" onclick="goTo(2)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(4)">Next: Consultation →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 5: CONSULTATION ═══════════════════════════════════════ -->
+    <div class="section-panel" id="panel-4">
+      <div class="section-header">
+        <div class="section-num">Section 5</div>
+        <h2>Consultation &amp; DPO Opinion</h2>
+        <p>Record consultations with your Data Protection Officer, other stakeholders, and any supervisory authority.</p>
+      </div>
+
+      <div class="role-banner role-banner-legal">
+        <span class="role-icon">⚖️</span>
+        <span><strong>Legal / DPO — this section is completed by the legal team.</strong> <span class="role-note">Record DPO opinion and any stakeholder consultation.</span></span>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">DPO Consultation <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field-row">
+          <div class="field">
+            <label>DPO consulted?</label>
+            <select id="dpo-consulted" onchange="autosave()">
+              <option value="">Select</option>
+              <option>Yes</option>
+              <option>No — DPO not required (justify below)</option>
+              <option>N/A — no DPO designated</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Date consulted</label>
+            <input type="date" id="dpo-date" oninput="autosave()" />
+          </div>
+        </div>
+        <div class="field">
+          <label>DPO opinion</label>
+          <select id="dpo-opinion" onchange="autosave()">
+            <option value="">Select</option>
+            <option>Approved</option>
+            <option>Approved with conditions</option>
+            <option>Objection raised — see notes</option>
+            <option>Pending</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>DPO conditions / recommendations</label>
+          <textarea id="dpo-notes" placeholder="List any conditions required for approval or DPO recommendations…" oninput="autosave()"></textarea>
+        </div>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">Stakeholder Consultation <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field">
+          <label>Other stakeholders consulted</label>
+          <input type="text" id="consult-others" placeholder="e.g. IT Security, Legal, Product, HR, Finance" oninput="autosave()" />
+        </div>
+        <div class="field">
+          <label>Supervisory authority consultation required? (Art. 36)</label>
+          <select id="consult-sa" onchange="autosave()">
+            <option value="">Select</option>
+            <option>No — residual risk is acceptable</option>
+            <option>Yes — consultation initiated</option>
+            <option>Yes — consultation completed (provide reference below)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>SA consultation reference / outcome</label>
+          <input type="text" id="consult-sa-ref" placeholder="Reference number or outcome description" oninput="autosave()" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Consumer &amp; Privacy Notice</div>
+        <div class="field-row">
+          <div class="field">
+            <label>CCPA — Privacy Policy updated?</label>
+            <select id="notice-pp" onchange="autosave()">
+              <option value="">Select</option>
+              <option>Yes — updated and live</option>
+              <option>In progress</option>
+              <option>No — not required</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Data subjects / consumers informed?</label>
+            <select id="notice-ds" onchange="autosave()">
+              <option value="">Select</option>
+              <option>Yes — via updated privacy policy</option>
+              <option>Yes — via in-app / in-product notice</option>
+              <option>Yes — via direct communication</option>
+              <option>No — notice not required</option>
+              <option>Pending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost" onclick="goTo(3)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(5)">Next: Sign-Off →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 6: SIGN-OFF ═══════════════════════════════════════════ -->
+    <div class="section-panel" id="panel-5">
+      <div class="section-header">
+        <div class="section-num">Section 6</div>
+        <h2>Decision &amp; Sign-Off</h2>
+        <p>Record the final DPIA outcome, any conditions, and approval signatures.</p>
+      </div>
+
+      <div class="role-banner role-banner-legal">
+        <span class="role-icon">⚖️</span>
+        <span><strong>Legal / DPO — this section is completed by the legal team.</strong> <span class="role-note">Record the final decision and collect approvals.</span></span>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">DPIA Outcome <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="field">
+          <label>Overall DPIA outcome <span class="req">*</span></label>
+          <select id="out-outcome" onchange="autosave()">
+            <option value="">Select outcome</option>
+            <option>✅ Approved — proceed</option>
+            <option>⚠️ Approved with conditions — see below</option>
+            <option>⛔ Rejected — do not proceed</option>
+            <option>⏸ Deferred — pending further information</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Conditions / required actions</label>
+          <textarea id="out-conditions" placeholder="List any mandatory conditions and their completion dates…" oninput="autosave()"></textarea>
+        </div>
+        <div class="field">
+          <label>Next review date <span style="font-size:11px;font-weight:400;color:var(--text-3);text-transform:none;letter-spacing:0;">(synced from Overview)</span></label>
+          <input type="date" id="out-review" oninput="autosave()" />
+        </div>
+      </div>
+
+      <div class="card card-legal">
+        <div class="card-title">Approvals <span class="role-chip chip-legal">⚖ Legal</span></div>
+        <div class="signoff-grid">
+          <div class="signoff-card">
+            <div class="signoff-role">Business Owner</div>
+            <div class="field"><label>Name</label><input type="text" id="so-bo-name" placeholder="Full name" oninput="checkSignoffs()"/></div>
+            <div class="field"><label>Date</label><input type="date" id="so-bo-date" onchange="checkSignoffs()"/></div>
+          </div>
+          <div class="signoff-card">
+            <div class="signoff-role">DPO / Legal Lead</div>
+            <div class="field"><label>Name</label><input type="text" id="so-leg-name" placeholder="Full name" oninput="checkSignoffs()"/></div>
+            <div class="field"><label>Date</label><input type="date" id="so-leg-date" onchange="checkSignoffs()"/></div>
+          </div>
+          <div class="signoff-card">
+            <div class="signoff-role">CISO / Security Lead</div>
+            <div class="field"><label>Name</label><input type="text" id="so-sec-name" placeholder="Full name" oninput="checkSignoffs()"/></div>
+            <div class="field"><label>Date</label><input type="date" id="so-sec-date" onchange="checkSignoffs()"/></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-ghost" onclick="goTo(4)">← Back</button>
+        <button class="btn btn-primary" onclick="goTo(6)">Review &amp; Export →</button>
+      </div>
+    </div>
+
+    <!-- ══ SECTION 7: REVIEW & EXPORT ════════════════════════════════════ -->
+    <div class="section-panel" id="panel-6">
+      <div class="section-header">
+        <div class="section-num">Final Step</div>
+        <h2>Review &amp; Export</h2>
+        <p>Review a summary of your DPIA and export it for your records.</p>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-stat">
+          <div class="val" id="sum-project">—</div>
+          <div class="lbl">Project Name</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" id="sum-outcome" style="font-size:16px">—</div>
+          <div class="lbl">DPIA Outcome</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" id="sum-risks">0</div>
+          <div class="lbl">Risks Assessed</div>
+        </div>
+        <div class="summary-stat">
+          <div class="val" id="sum-parties">0</div>
+          <div class="lbl">Third Parties Identified</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-title">Summary</div>
+        <div id="review-summary" style="font-size:13.5px;color:var(--text-2);line-height:1.8;"></div>
+      </div>
+
+      <div class="export-actions">
+        <button class="btn btn-primary" onclick="exportRegisterRow()">📊 Export Register Row</button>
+        <button class="btn btn-ghost" onclick="exportJSON()">⬇ Save to Drive (.txt)</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨 Print / Save PDF</button>
+        <button class="btn btn-ghost" onclick="copyText()">📋 Copy Summary</button>
+      </div>
+
+      <div id="register-row-output" style="display:none;margin-top:16px;">
+        <div class="card" style="background:var(--surface2);border:1px solid var(--border);">
+          <div class="card-title" style="margin-bottom:4px;">📊 Register Row</div>
+          <p style="font-size:12px;color:var(--text-2);margin-bottom:10px;">Tab-separated row — paste directly into your DPIA Register spreadsheet. Columns: Project Name · Owner · Start Date · Review Date · Status · GDPR Basis · CCPA Purpose · Overall Risk · DPO Opinion · Outcome · Risks Assessed · Third Parties · Exported Date</p>
+          <textarea id="register-row-text" style="width:100%;height:72px;font-family:monospace;font-size:11.5px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;resize:vertical;" readonly></textarea>
+          <button class="btn btn-ghost" style="margin-top:8px;" onclick="copyRegisterRow()">📋 Copy to Clipboard</button>
+        </div>
+      </div>
+
+      <div class="nav-actions" style="border-top:none;padding-top:0;">
+        <button class="btn btn-ghost" onclick="goTo(5)">← Back to Sign-Off</button>
+        <span></span>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div id="toast"><span class="toast-icon">✓</span><span id="toast-msg">Saved</span></div>
+
+<!-- ═══════════════════ SCRIPT ═════════════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+// SMART PURPOSE ANALYZER
+// ══════════════════════════════════════════════════════════════════════════
+
+const GDPR_RULES = [
+  {
+    basis: "Consent (Art. 6(1)(a))",
+    selectValue: "Consent (Art. 6(1)(a))",
+    confidence: 3,
+    keywords: ["newsletter","marketing email","opt-in","opt in","subscribe","subscription email","promotional email","personalised offer","personalized offer","advertising","re-marketing","retarget","direct marketing","consent","opted in","permission","mailing list","email campaign","sms marketing","push notification","lookalike","look alike","custom audience","audience sharing","hashed email","email list","target customer","targeting customer","targeting potential","prospecting","paid social","facebook ad","fb ad","instagram ad","social media ad","audience building","prospect list","cold outreach","outbound marketing","email addresses to","sharing email","sharing hashed"],
+    headline: "Consent is the right fit",
+    reason: "Your description involves <strong>marketing communications or targeted advertising</strong>. Under GDPR, processing personal data (including email addresses) to target individuals with ads or build advertising audiences requires freely given, specific, informed consent — you must be able to prove it was obtained."
+  },
+  {
+    basis: "Contract (Art. 6(1)(b))",
+    selectValue: "Contract (Art. 6(1)(b))",
+    confidence: 3,
+    keywords: ["fulfil order","fulfill order","process payment","deliver","shipping","account creation","sign up","purchase","checkout","transaction","subscription service","provide service","service agreement","onboard","booking","reservation","invoice","billing","customer account"],
+    headline: "Contract performance is the right fit",
+    reason: "Your description involves processing data to <strong>deliver a service or fulfil a contract</strong> the individual entered into. This is the strongest basis when processing is genuinely necessary to complete what was agreed — you don't need separate consent."
+  },
+  {
+    basis: "Legal obligation (Art. 6(1)(c))",
+    selectValue: "Legal obligation (Art. 6(1)(c))",
+    confidence: 3,
+    keywords: ["tax","vat","hmrc","irs","audit","regulatory","required by law","legal requirement","report to authority","financial reporting","aml","anti-money laundering","know your customer","kyc","gdpr request","data subject request","right of access","subject access","legal hold","court order","law enforcement","statutory","compliance requirement"],
+    headline: "Legal obligation is the right fit",
+    reason: "Your description involves processing that is <strong>required by law or regulation</strong>. You don't need consent — but you must identify the specific law that requires it, and you can only process what that law actually demands."
+  },
+  {
+    basis: "Legitimate interests (Art. 6(1)(f))",
+    selectValue: "Legitimate interests (Art. 6(1)(f))",
+    confidence: 2,
+    keywords: ["fraud prevention","abuse prevention","security","network security","threat detection","analytics","improve our","improve the","internal research","business intelligence","customer insight","product improvement","user behaviour","user behavior","log analysis","service improvement","personalise","personalize","recommendation","prevent misuse","safety","account protection","b2b marketing"],
+    headline: "Legitimate interests may apply",
+    reason: "Your description looks like a <strong>genuine business interest</strong> (e.g. security, analytics, or service improvement) that doesn't require consent. You'll need to complete a three-part Legitimate Interests Assessment (LIA) to confirm your interest outweighs the individual's rights — document it in the field below."
+  },
+  {
+    basis: "Vital interests (Art. 6(1)(d))",
+    selectValue: "Vital interests (Art. 6(1)(d))",
+    confidence: 3,
+    keywords: ["emergency","life-threatening","medical emergency","save life","protect life","urgent safety","critical health"],
+    headline: "Vital interests may apply",
+    reason: "Your description suggests processing to <strong>protect someone's life</strong>. This basis is very narrow and should only be used when no other basis applies. Consider whether consent or legal obligation is more appropriate."
+  },
+  {
+    basis: "Public task (Art. 6(1)(e))",
+    selectValue: "Public task (Art. 6(1)(e))",
+    confidence: 3,
+    keywords: ["public authority","government","public sector","official function","public interest","statutory function","public body","council","ministry","public health","public safety"],
+    headline: "Public task may apply",
+    reason: "Your description suggests a <strong>public authority carrying out an official task</strong>. This basis requires a clear legal basis in domestic law — confirm the specific statutory power."
+  }
+];
+
+const CCPA_RULES = [
+  {
+    purpose: "Advertising or marketing",
+    selectValue: "Advertising or marketing",
+    confidence: 3,
+    keywords: ["marketing","advertis","promotional","campaign","retarget","re-target","email blast","offer","discount","recommend product","upsell","cross-sell","engagement","reactivat","lookalike","look alike","custom audience","hashed email","email list","targeting potential","targeting customer","prospecting","paid social","facebook","fb's","instagram","social media ad","audience building","audience sharing","prospect list","outbound","email addresses to","sharing email","sharing hashed","customer acquisition","lead generation","lead gen"],
+    headline: "Advertising or marketing",
+    reason: "Your description covers <strong>promoting products or services</strong> to consumers, including sharing data with advertising platforms or building targeted audiences. Under CCPA/CPRA, this is a business purpose — but you must disclose it in your privacy policy and honour opt-out requests."
+  },
+  {
+    purpose: "Providing requested service or product",
+    selectValue: "Providing requested service or product",
+    confidence: 3,
+    keywords: ["provide","deliver","fulfil","fulfill","process payment","shipping","account creation","sign up","purchase","checkout","transaction","subscription service","provide service","service agreement","onboard","booking","reservation","invoice","billing","customer account"],
+    headline: "Providing a requested service",
+    reason: "Your description is about <strong>delivering what the consumer asked for</strong>. This is the most straightforward CCPA business purpose and doesn't require an opt-out mechanism."
+  },
+  {
+    purpose: "Security and fraud prevention",
+    selectValue: "Security and fraud prevention",
+    confidence: 3,
+    keywords: ["fraud","security","threat","abuse","misuse","protect","detect","prevent","authentication","identity verif","suspicious","anomaly","intrusion"],
+    headline: "Security and fraud prevention",
+    reason: "Your description is about <strong>protecting systems, users, or the business</strong> from harm. This is a recognised CCPA business purpose — processing must be proportionate to the security need."
+  },
+  {
+    purpose: "Internal research or analytics",
+    selectValue: "Internal research or analytics",
+    confidence: 3,
+    keywords: ["analytics","analyse","analyze","research","understand","insight","measure","dashboard","report","metric","kpi","behaviour","behavior","product usage","engagement data","a/b test","experiment","improve"],
+    headline: "Internal research or analytics",
+    reason: "Your description involves <strong>understanding how people use your product or service</strong>. This is a valid CCPA business purpose — but data used for analytics must not be disclosed to third parties or used for cross-context advertising without consent."
+  },
+  {
+    purpose: "Debugging / error repair",
+    selectValue: "Debugging / error repair",
+    confidence: 3,
+    keywords: ["debug","error","bug","fix","repair","crash","log","diagnostic","troubleshoot","exception","issue"],
+    headline: "Debugging / error repair",
+    reason: "Your description covers <strong>identifying and fixing technical problems</strong>. This is a narrow CCPA business purpose — data collected for debugging must not be repurposed."
+  },
+  {
+    purpose: "Quality assurance",
+    selectValue: "Quality assurance",
+    confidence: 2,
+    keywords: ["quality","qa","test","review","monitor","check","standard","assur","verif","audit","evaluat"],
+    headline: "Quality assurance",
+    reason: "Your description relates to <strong>evaluating or improving service quality</strong>. This is a recognised CCPA business purpose. Ensure data is not retained longer than necessary for the quality function."
+  }
+];
+
+// Cross-context advertising signals (CCPA/CPRA "sell or share" triggers)
+const CROSS_CONTEXT_KEYWORDS = [
+  "third-party advertis", "third party advertis",
+  "ad network", "ad exchange", "demand side", "dsp ",
+  "programmatic", "behavioral advertis", "behavioural advertis",
+  "interest-based advertis", "interest based advertis",
+  "retarget across", "cross-site track", "cross site track",
+  "tracking pixel", "data broker", "sell data", "share data",
+  "audience segment", "lookalike audience", "custom audience",
+  "targeted advertis", "cross-context", "cross context",
+  "advertising partner", "advertising platform",
+  "google ads", "meta ads", "facebook pixel", "tiktok pixel",
+  "trade desk", "liveramp", "acxiom",
+  "lookalike", "look alike audience", "custom audience", "hashed email",
+  "email list to facebook", "email addresses to facebook", "sharing email addresses",
+  "facebook tool", "facebook custom", "meta custom", "fb's", "facebook ads",
+  "audience sharing", "email matching", "customer match"
+];
+
+function scoreRules(text, rules) {
+  const lower = text.toLowerCase();
+  return rules.map(rule => {
+    const hits = rule.keywords.filter(kw => lower.includes(kw));
+    return { ...rule, score: hits.length, hits };
+  }).filter(r => r.score > 0).sort((a, b) => (b.score * b.confidence) - (a.score * a.confidence));
+}
+
+function confidenceDots(score, max = 3) {
+  let dots = '';
+  for (let i = 1; i <= max; i++) {
+    const on = i <= score ? (score === 1 ? 'warn' : 'on') : '';
+    dots += `<span class="conf-dot ${on}"></span>`;
+  }
+  return dots;
+}
+
+function renderSuggestion(gdprMatch, ccpaMatch, wordCount) {
+  const panel = document.getElementById('suggest-panel');
+  const body  = document.getElementById('suggest-body');
+  const conf  = document.getElementById('suggest-confidence');
+
+  if (!gdprMatch && !ccpaMatch) { panel.classList.remove('visible'); return; }
+
+  let html = '';
+
+  if (gdprMatch) {
+    html += `
+      <div class="suggest-row">
+        <span class="suggest-law-badge badge-gdpr">GDPR</span>
+        <div class="suggest-content">
+          <div class="suggest-basis">${gdprMatch.headline}</div>
+          <div class="suggest-reason">${gdprMatch.reason}</div>
+        </div>
+        <button class="suggest-apply" id="apply-gdpr" onclick="applySuggestion('gdpr','${gdprMatch.selectValue.replace(/'/g,"\\'")}')">Apply ↗</button>
+      </div>`;
+  }
+
+  if (ccpaMatch) {
+    html += `
+      <div class="suggest-row">
+        <span class="suggest-law-badge badge-ccpa">CCPA</span>
+        <div class="suggest-content">
+          <div class="suggest-basis">${ccpaMatch.headline}</div>
+          <div class="suggest-reason">${ccpaMatch.reason}</div>
+        </div>
+        <button class="suggest-apply" id="apply-ccpa" onclick="applySuggestion('ccpa','${ccpaMatch.selectValue.replace(/'/g,"\\'")}')">Apply ↗</button>
+      </div>`;
+  }
+
+  body.innerHTML = html;
+
+  const topScore = Math.min((gdprMatch?.score || 0) + (ccpaMatch?.score || 0), 3);
+  const confLabel = topScore >= 3 ? 'High confidence' : topScore === 2 ? 'Medium confidence' : 'Low confidence — review carefully';
+  conf.innerHTML = `<div class="conf-dots">${confidenceDots(topScore)}</div><span>${confLabel} · based on ${wordCount} words</span>`;
+
+  panel.classList.add('visible');
+}
+
+// ── Show/hide the LIA field based on GDPR dropdown ──────────────────────
+function toggleLIField() {
+  const val = document.getElementById('purp-gdpr')?.value || '';
+  const field = document.getElementById('lia-field');
+  if (!field) return;
+  const show = val.includes('Legitimate interests');
+  field.style.display = show ? 'block' : 'none';
+  if (show) {
+    field.style.animation = 'fadeIn .2s ease';
+    // focus the textarea to guide the user
+    setTimeout(() => document.getElementById('purp-lit')?.focus(), 50);
+  }
+}
+
+// ── Detect cross-context advertising signals ────────────────────────────
+function detectCrossContext(text) {
+  const lower = text.toLowerCase();
+  return CROSS_CONTEXT_KEYWORDS.filter(kw => lower.includes(kw));
+}
+
+function showCrossContextAlert(hits) {
+  const alert = document.getElementById('cross-context-alert');
+  if (!alert) return;
+  if (hits.length > 0) {
+    alert.style.display = 'block';
+    // Pre-select the sold/shared dropdown if still blank
+    const sel = document.getElementById('purp-sold');
+    if (sel && !sel.value) {
+      sel.value = 'Yes — opt-out mechanism to be implemented';
+      autosave();
+    }
+  } else {
+    alert.style.display = 'none';
+  }
+}
+
+function analyzePurpose() {
+  const text = document.getElementById('proj-desc')?.value || '';
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount < 5) {
+    document.getElementById('suggest-panel')?.classList.remove('visible');
+    document.getElementById('cross-context-alert').style.display = 'none';
+    return;
+  }
+
+  const gdprMatches = scoreRules(text, GDPR_RULES);
+  const ccpaMatches = scoreRules(text, CCPA_RULES);
+  const crossContextHits = detectCrossContext(text);
+
+  // Auto-apply top match to Legal Basis fields if user hasn't manually edited them
+  const gdprSel = document.getElementById('purp-gdpr');
+  if (gdprSel && !gdprSel.dataset.edited && gdprMatches[0]) {
+    for (let o of gdprSel.options) {
+      if (o.value === gdprMatches[0].selectValue || o.text === gdprMatches[0].selectValue) {
+        gdprSel.value = o.value; break;
+      }
+    }
+    toggleLIField();
+    autosave();
+  }
+  const ccpaSel = document.getElementById('purp-ccpa');
+  if (ccpaSel && !ccpaSel.dataset.edited && ccpaMatches[0]) {
+    ccpaSel.value = ccpaMatches[0].selectValue;
+    autosave();
+  }
+
+  renderSuggestion(gdprMatches[0] || null, ccpaMatches[0] || null, wordCount);
+  showCrossContextAlert(crossContextHits);
+  autoSelectCCPARights(text);
+  suggestVulnGroup();
+  suggestSafeguards();
+  suggestDataSubjects();
+  suggestGeo();
+  suggestPrivacyByDesign();
+}
+
+function applySuggestion(type, value) {
+  if (type === 'gdpr') {
+    const sel = document.getElementById('purp-gdpr');
+    for (let o of sel.options) { if (o.value === value) { sel.value = value; break; } }
+    // If exact match not found, try partial
+    if (!sel.value) { for (let o of sel.options) { if (o.text === value) { sel.value = o.value; break; } } }
+    if (!sel.value) sel.value = value;
+  } else {
+    const sel = document.getElementById('purp-ccpa');
+    sel.value = value;
+  }
+  const btn = document.getElementById('apply-' + type);
+  if (btn) { btn.textContent = '✓ Applied'; btn.classList.add('applied'); btn.disabled = true; }
+  autosave();
+  showToast('✓ Legal basis applied');
+}
+
+function dismissSuggestion() {
+  document.getElementById('suggest-panel')?.classList.remove('visible');
+}
+
+// ── Submit to Legal ───────────────────────────────────────────────────────
+const SLACK_WEBHOOK = 'https://hooks.slack.com/services/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';
+
+function buildRestoreUrl() {
+  try {
+    const raw = gatherData();
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(raw))));
+    // Use current page URL when hosted; fallback message for local file
+    const base = (window.location.protocol !== 'file:')
+      ? window.location.origin + window.location.pathname
+      : null;
+    return base ? `${base}?restore=${encoded}` : null;
+  } catch(e) { return null; }
+}
+
+function submitToLegal() {
+  const d = buildCleanExport();
+  const pn  = d.project.name        || '(unnamed project)';
+  const own = d.project.business_owner || '(no name)';
+  const dt  = d.project.start_date   || '(no date)';
+  const tri = d.project.trigger_reason || '—';
+  const desc = d.project.description  || '—';
+  const geo  = d.scope.geographic     || '—';
+  const dur  = d.scope.duration       || '—';
+  const vol  = d.scope.estimated_subjects || '—';
+  const dsVuln = d.data_subjects.vulnerable_groups || '—';
+
+  const dataLines = d.data_inventory.length
+    ? d.data_inventory.map(r => `• ${r.data_type} (${r.sensitivity} sensitivity, retained: ${r.retention})`).join('\n')
+    : '(none entered)';
+
+  const flowLines = d.third_party_flows.length
+    ? d.third_party_flows.map(r => `• ${r.party} — ${r.role}`).join('\n')
+    : '(none entered)';
+
+  const restoreUrl = buildRestoreUrl();
+  const linkBlock = restoreUrl
+    ? { type: 'section', text: { type: 'mrkdwn', text: `*👉 <${restoreUrl}|Open DPIA form to complete Legal Review>*` } }
+    : { type: 'context', elements: [{ type: 'mrkdwn', text: '👆 Open the DPIA form (hosted URL needed for direct link — see setup instructions).' }] };
+
+  const slackPayload = {
+    blocks: [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: '📋 New DPIA Submitted for Legal Review', emoji: true }
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*Project:*\n${pn}` },
+          { type: 'mrkdwn', text: `*Business Owner:*\n${own}` },
+          { type: 'mrkdwn', text: `*Date Initiated:*\n${dt}` },
+          { type: 'mrkdwn', text: `*Reason for Review:*\n${tri}` }
+        ]
+      },
+      { type: 'divider' },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: `*Description:*\n${desc}` }
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*Geographic Scope:*\n${geo}` },
+          { type: 'mrkdwn', text: `*Duration:*\n${dur}` },
+          { type: 'mrkdwn', text: `*Est. Data Subjects:*\n${vol}` },
+          { type: 'mrkdwn', text: `*Vulnerable Groups:*\n${dsVuln}` }
+        ]
+      },
+      { type: 'divider' },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: `*Data Categories:*\n${dataLines}` }
+      },
+      {
+        type: 'section',
+        text: { type: 'mrkdwn', text: `*Third Party Data Flows:*\n${flowLines}` }
+      },
+      { type: 'divider' },
+      linkBlock
+    ]
+  };
+
+  // POST to Slack (no-cors — message is delivered; response is opaque by browser design)
+  fetch(SLACK_WEBHOOK, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(slackPayload)
+  }).catch(() => {}); // silently ignore network errors
+
+  // Update status & button
+  const statusSel = document.getElementById('proj-status');
+  if (statusSel) statusSel.value = 'Submitted for Legal Review';
+  autosave();
+
+  const btn = document.getElementById('submit-legal-btn');
+  if (btn) {
+    btn.textContent = '✓ Submitted — Slack notification sent';
+    btn.classList.add('submitted');
+    btn.disabled = true;
+  }
+  showToast('✓ Slack notification sent to #legal-requests');
+}
+
+// ── Auto-update Status when sign-offs are entered ─────────────────────────
+function checkSignoffs() {
+  const pairs = [
+    ['so-bo-name',  'so-bo-date'],
+    ['so-leg-name', 'so-leg-date'],
+    ['so-sec-name', 'so-sec-date']
+  ];
+  const anyComplete = pairs.some(([nameId, dateId]) => {
+    const name = document.getElementById(nameId)?.value?.trim();
+    const date = document.getElementById(dateId)?.value?.trim();
+    return name && date;
+  });
+  const allComplete = pairs.every(([nameId, dateId]) => {
+    const name = document.getElementById(nameId)?.value?.trim();
+    const date = document.getElementById(dateId)?.value?.trim();
+    return name && date;
+  });
+  const statusSel = document.getElementById('proj-status');
+  if (!statusSel) return;
+  if (allComplete) {
+    statusSel.value = 'Approved';
+  } else if (anyComplete) {
+    statusSel.value = 'Under Review';
+  }
+  autosave();
+}
+
+let analyzeTimer;
+function debouncedAnalyze() {
+  clearTimeout(analyzeTimer);
+  analyzeTimer = setTimeout(analyzePurpose, 600);
+}
+
+// ── Reason for Review suggester (driven by project description) ───────────
+const TRIGGER_RULES = [
+  { value: "New system or product",                          keywords: ["new system","new product","new platform","new tool","new app","new service","new feature","launching","building","creating","developing","new pipeline","new portal"] },
+  { value: "New technology deployment",                     keywords: ["ai","machine learning","ml model","llm","large language","biometric","facial recogni","voice recogni","iot","blockchain","generative","automation","algorithm","api integration","third-party integration"] },
+  { value: "Profiling or automated decision-making",        keywords: ["personalised","personalized","recommendation","profil","scoring","predict","segment","automat","decision","rank","targeting","behavioural model","behavior model"] },
+  { value: "Large-scale processing of personal data",       keywords: ["large scale","large-scale","millions","thousands of users","bulk","mass","all users","entire customer","whole database","population"] },
+  { value: "Systematic monitoring",                         keywords: ["monitor","track","surveillance","log","record","clickstream","session replay","heatmap","audit trail","activity log","watching","observe"] },
+  { value: "Processing sensitive / special category data (Art. 9)", keywords: ["health","medical","biometric","genetic","racial","ethnic","religion","political","sexual","trade union","criminal","financial","salary","credit"] },
+  { value: "Cross-border data transfer",                    keywords: ["cross-border","international","transfer","us server","eu data","gdpr transfer","standard contractual","scc","adequacy","outside the uk","outside the eu","third country"] },
+  { value: "Significant change to existing system",         keywords: ["change","update","upgrade","modify","extend","new use","repurpose","expand","migrate","integrat","additional data","new purpose"] },
+];
+
+let pendingTriggerValue = '';
+
+function suggestTrigger() {
+  const text = (document.getElementById('proj-desc')?.value || '') + ' ' + (document.getElementById('proj-name')?.value || '');
+  const lower = text.toLowerCase();
+  if (lower.trim().length < 10) { document.getElementById('trigger-suggest-wrap').style.display = 'none'; return; }
+
+  // Score each rule
+  const scored = TRIGGER_RULES.map(r => ({
+    ...r, score: r.keywords.filter(kw => lower.includes(kw)).length
+  })).filter(r => r.score > 0).sort((a, b) => b.score - a.score);
+
+  if (!scored.length) { document.getElementById('trigger-suggest-wrap').style.display = 'none'; return; }
+
+  const best = scored[0];
+  // Don't show if the dropdown is already set to this value
+  const current = document.getElementById('proj-trigger')?.value;
+  if (current === best.value) { document.getElementById('trigger-suggest-wrap').style.display = 'none'; return; }
+
+  pendingTriggerValue = best.value;
+  document.getElementById('trigger-suggest-text').textContent = 'Suggested: ' + best.value;
+  document.getElementById('trigger-suggest-wrap').style.display = 'block';
+}
+
+function applyTriggerSuggestion() {
+  const sel = document.getElementById('proj-trigger');
+  if (sel && pendingTriggerValue) sel.value = pendingTriggerValue;
+  document.getElementById('trigger-suggest-wrap').style.display = 'none';
+  autosave();
+  showToast('✓ Reason for review applied');
+}
+
+let triggerTimer;
+function debouncedTriggerSuggest() {
+  clearTimeout(triggerTimer);
+  triggerTimer = setTimeout(suggestTrigger, 500);
+}
+
+// ── Vulnerable groups auto-suggest ─────────────────────────────────────────
+const VULN_RULES = [
+  {
+    value: 'Yes — children',
+    keywords: ['child','children','minor','minors','under 13','under 16','under 18','kid','kids',
+      'young person','young people','school','student','pupil','parental consent','coppa',
+      'age verif','underage','youth','teen','teenager','toddler','infant','juvenile','family app',
+      'educational app','kids platform','children\'s product']
+  },
+  {
+    value: 'Yes — elderly',
+    keywords: ['elderly','elder','senior','older adult','aging','aged care','care home',
+      'nursing home','retirement','pension','age 65','aged 65','older people','geriatric',
+      'assisted living','sheltered housing','dementia','alzheimer']
+  },
+  {
+    value: 'Yes — other vulnerable groups',
+    keywords: ['disability','disabled','mental health','patient','psychiatric','vulnerable',
+      'abuse victim','domestic violence','trafficking','asylum seeker','refugee','homeless',
+      'addiction','substance','low income','unemployed','financial hardship','carer','caregiver',
+      'chronic illness','grief','bereavement','crisis','at-risk','marginalised','marginalized']
+  }
+];
+
+// Safeguards keyed by vulnerability + classification tier
+const VULN_SAFEGUARDS = {
+  'Yes — children':
+    'Age verification before data collection; parental or guardian consent mechanism; data minimisation to the absolute minimum necessary; no targeted or behavioural advertising; enhanced access controls and audit logging; COPPA / GDPR Art. 8 compliance review; clear and child-friendly privacy notice',
+  'Yes — elderly':
+    'Plain-language, accessible privacy notices (large font, clear language); straightforward opt-out and rights-request process; no exploitative profiling or dark patterns; dedicated support channel for rights requests; staff awareness training on processing data of older adults',
+  'Yes — other vulnerable groups':
+    'Minimise data collection to what is strictly necessary; strict need-to-know access controls; pseudonymisation where technically feasible; accessible and multi-format privacy notices; clear escalation path for rights requests; additional safeguards if health, financial hardship, or criminal justice data is involved'
+};
+
+const CLASS_SAFEGUARDS = {
+  'Restricted':
+    'AES-256 encryption at rest and TLS 1.2+ in transit; MFA required for all access; access and activity logging; prohibition on personal devices (Akkio Classification Policy); DPA / BAA in place with all processors; annual penetration testing; data minimisation and purpose limitation review',
+  'Confidential':
+    'Encryption at rest and in transit recommended; role-based access controls; quarterly access reviews; DPA required with all processors; incident response plan covering this data type',
+  'Internal':
+    'Role-based access controls; staff security awareness training; clear desk / clear screen policy; no sharing outside the organisation without approval',
+  'Public':
+    'Standard access controls; content review prior to publication; confirm no personal data inadvertently included'
+};
+
+let pendingVulnValue = '';
+let pendingSafeguardValue = '';
+
+function toggleSafeguardField() {
+  const val   = document.getElementById('ds-vuln')?.value || '';
+  const field = document.getElementById('safeguard-field');
+  if (!field) return;
+  const show = val.startsWith('Yes');
+  field.style.display = show ? 'block' : 'none';
+  if (show) field.style.animation = 'fadeIn .2s ease';
+  if (!show) {
+    // clear safeguard value and hide its suggest when "No" is selected
+    const inp = document.getElementById('ds-safeguard');
+    if (inp) inp.value = '';
+    document.getElementById('safeguard-suggest-wrap')?.classList.remove('visible');
+  }
+}
+
+function suggestVulnGroup() {
+  const descText = document.getElementById('proj-desc')?.value || '';
+  const catsText = document.getElementById('ds-cats')?.value || '';
+  const combined = (descText + ' ' + catsText).toLowerCase();
+  const wrap     = document.getElementById('vuln-suggest-wrap');
+  if (!wrap) return;
+
+  // Need at least some meaningful text before suggesting anything
+  const hasContent = (descText.trim().split(/\s+/).length >= 3) || (catsText.trim().length >= 4);
+  if (!hasContent) { wrap.classList.remove('visible'); return; }
+
+  const match   = VULN_RULES.find(r => r.keywords.some(kw => combined.includes(kw)));
+  const current = document.getElementById('ds-vuln')?.value;
+
+  // Suggest the matched value, OR "No" if text is present but nothing vulnerable detected
+  const suggested = match ? match.value : 'No';
+  if (current === suggested) { wrap.classList.remove('visible'); return; }
+
+  pendingVulnValue = suggested;
+  document.getElementById('vuln-suggest-text').textContent = match
+    ? 'Detected: ' + suggested
+    : 'No vulnerable group indicators detected — suggest: No';
+  wrap.classList.add('visible');
+}
+
+function applyVulnSuggestion() {
+  const sel = document.getElementById('ds-vuln');
+  if (sel && pendingVulnValue) sel.value = pendingVulnValue;
+  document.getElementById('vuln-suggest-wrap').classList.remove('visible');
+  toggleSafeguardField();
+  autosave();
+  suggestSafeguards();
+  showToast('✓ Vulnerable group applied');
+}
+
+function suggestSafeguards() {
+  const vulnVal = document.getElementById('ds-vuln')?.value || '';
+  const wrap    = document.getElementById('safeguard-suggest-wrap');
+  if (!wrap) return;
+
+  // Determine highest Akkio class from any data row already filled in
+  const catInputs = document.querySelectorAll('.cat-input');
+  let topClass = null;
+  const classPriority = ['Restricted','Confidential','Internal','Public'];
+  catInputs.forEach(inp => {
+    const res = classifyDataCategory(inp.value);
+    if (res.akkioClass) {
+      const rank = classPriority.indexOf(res.akkioClass.akkioClass);
+      const topRank = topClass ? classPriority.indexOf(topClass) : 99;
+      if (rank < topRank) topClass = res.akkioClass.akkioClass;
+    }
+  });
+
+  let safeguard = '';
+  if (vulnVal && vulnVal !== 'No' && VULN_SAFEGUARDS[vulnVal]) {
+    safeguard = VULN_SAFEGUARDS[vulnVal];
+  }
+  if (topClass && CLASS_SAFEGUARDS[topClass]) {
+    const classText = 'Data classification ' + topClass + ': ' + CLASS_SAFEGUARDS[topClass];
+    safeguard = safeguard ? safeguard + '\n\n' + classText : classText;
+  }
+
+  if (!safeguard || document.getElementById('ds-safeguard')?.value) {
+    wrap.classList.remove('visible');
+    return;
+  }
+
+  pendingSafeguardValue = safeguard;
+  // Show a concise preview (first 80 chars) in the chip
+  const preview = safeguard.length > 80 ? safeguard.slice(0, 80) + '…' : safeguard;
+  document.getElementById('safeguard-suggest-text').textContent = preview;
+  wrap.classList.add('visible');
+}
+
+function applySafeguardSuggestion() {
+  const inp = document.getElementById('ds-safeguard');
+  if (inp && pendingSafeguardValue) inp.value = pendingSafeguardValue;
+  document.getElementById('safeguard-suggest-wrap').classList.remove('visible');
+  autosave();
+  showToast('✓ Safeguards applied');
+}
+
+// ── Categories of data subjects auto-suggest ───────────────────────────────
+// Collects ALL matching categories and joins them (not just the first match)
+const DS_CATS_RULES = [
+  { label: 'Customers / registered users',
+    keywords: ['customer','registered user','subscriber','member','client','account holder','buyer','shopper','end user','platform user','saas user'] },
+  { label: 'Prospective customers / leads',
+    keywords: ['prospect','lead','potential customer','potential client','marketing list','mailing list','opt-in list','lead list','cold outreach','outbound'] },
+  { label: 'Website / app visitors',
+    keywords: ['website visitor','site visitor','anonymous visitor','web user','session','page view','cookie','analytics user','mobile user','app user'] },
+  { label: 'Employees',
+    keywords: ['employee','staff','worker','personnel','team member','contractor','workforce','hr data','payroll','job applicant','candidate','recruit'] },
+  { label: 'Minors (under 16)',
+    keywords: ['child','children','minor','minors','under 13','under 16','under 18','kid','student','pupil','young person','teen','toddler'] },
+  { label: 'Patients / healthcare subjects',
+    keywords: ['patient','clinical','medical','healthcare','health record','phi','hospital','care recipient','therapy'] },
+  { label: 'California consumers',
+    keywords: ['california','ccpa','cpra','us consumer','california resident','california user'] },
+];
+
+let pendingDataSubjectsValue = '';
+
+function suggestDataSubjects() {
+  const text  = document.getElementById('proj-desc')?.value || '';
+  const lower = text.toLowerCase();
+  const wrap  = document.getElementById('ds-cats-suggest-wrap');
+  if (!wrap) return;
+
+  if (document.getElementById('ds-cats')?.value?.trim()) { wrap.classList.remove('visible'); return; }
+
+  const matches = DS_CATS_RULES.filter(r => r.keywords.some(kw => lower.includes(kw)));
+  if (!matches.length) { wrap.classList.remove('visible'); return; }
+
+  const value   = matches.map(m => m.label).join(', ');
+  const preview = value.length > 72 ? value.slice(0, 72) + '…' : value;
+  pendingDataSubjectsValue = value;
+  document.getElementById('ds-cats-suggest-text').textContent = 'Detected: ' + preview;
+  wrap.classList.add('visible');
+}
+
+function applyDataSubjectsSuggestion() {
+  const inp = document.getElementById('ds-cats');
+  if (inp && pendingDataSubjectsValue) inp.value = pendingDataSubjectsValue;
+  document.getElementById('ds-cats-suggest-wrap').classList.remove('visible');
+  autosave();
+  showToast('✓ Data subjects applied');
+}
+
+// ── Geographic scope auto-suggest ──────────────────────────────────────────
+const GEO_RULES = [
+  { value: 'EU / EEA',           keywords: ['gdpr','eu ','eea','european union','eu citizen','eu resident','eu data','eu user','eu customer','europe'] },
+  { value: 'UK',                 keywords: ['uk gdpr','united kingdom','uk resident','uk user','british','ico','uk data','gb ','england','scotland','wales'] },
+  { value: 'California (US)',    keywords: ['ccpa','cpra','california','california consumer','california resident'] },
+  { value: 'United States',      keywords: ['us user','american','united states','us resident','us customer','us consumer','hipaa'] },
+  { value: 'Global / Worldwide', keywords: ['global','worldwide','international','all regions','multi-region','cross-border','globally'] },
+];
+
+let pendingGeoValue = '';
+
+function suggestGeo() {
+  const text  = document.getElementById('proj-desc')?.value || '';
+  const lower = text.toLowerCase();
+  const wrap  = document.getElementById('geo-suggest-wrap');
+  if (!wrap) return;
+
+  if (document.getElementById('scope-geo')?.value?.trim()) { wrap.classList.remove('visible'); return; }
+
+  const seen    = new Set();
+  const matches = GEO_RULES.filter(r => {
+    if (r.keywords.some(kw => lower.includes(kw)) && !seen.has(r.value)) {
+      seen.add(r.value);
+      return true;
+    }
+    return false;
+  });
+  if (!matches.length) { wrap.classList.remove('visible'); return; }
+
+  const value = matches.map(m => m.value).join(', ');
+  pendingGeoValue = value;
+  document.getElementById('geo-suggest-text').textContent = 'Detected: ' + value;
+  wrap.classList.add('visible');
+}
+
+function applyGeoSuggestion() {
+  const inp = document.getElementById('scope-geo');
+  if (inp && pendingGeoValue) inp.value = pendingGeoValue;
+  document.getElementById('geo-suggest-wrap').classList.remove('visible');
+  autosave();
+  showToast('✓ Geographic scope applied');
+}
+
+// ── Privacy by design measures auto-suggest ────────────────────────────────
+let pendingPBDValue = '';
+
+function suggestPrivacyByDesign() {
+  const wrap = document.getElementById('pbd-suggest-wrap');
+  if (!wrap) return;
+  if (document.getElementById('nec-pbd')?.value?.trim()) { wrap.classList.remove('visible'); return; }
+
+  const descText = (document.getElementById('proj-desc')?.value || '').toLowerCase();
+
+  // Determine highest Akkio class across all data rows already entered
+  const catInputs  = document.querySelectorAll('.cat-input');
+  let topClass     = null;
+  const classOrder = ['Restricted', 'Confidential', 'Internal', 'Public'];
+  catInputs.forEach(inp => {
+    const res  = classifyDataCategory(inp.value);
+    const rank = res.akkioClass ? classOrder.indexOf(res.akkioClass.akkioClass) : -1;
+    const top  = topClass        ? classOrder.indexOf(topClass)                  : 99;
+    if (rank >= 0 && rank < top) topClass = res.akkioClass.akkioClass;
+  });
+
+  // Also infer from description if no data rows yet
+  if (!topClass) {
+    if (/health|medical|phi|biometric|genetic|ssn|social security|payment card|credential|password/.test(descText)) topClass = 'Restricted';
+    else if (/customer|employee|financial|invoice|salary|source code|profile/.test(descText)) topClass = 'Confidential';
+  }
+
+  const hasSpecialCat  = /health|medical|biometric|genetic|racial|ethnic|political|religion|sexual|criminal/.test(descText);
+  const hasChildren    = /child|minor|under 1[3-8]|kid|student|pupil|teen/.test(descText);
+  const hasCrossCtx    = CROSS_CONTEXT_KEYWORDS.some(kw => descText.includes(kw));
+  const hasTransfer    = /cross.border|international transfer|us server|eu data|standard contractual|scc|third country/.test(descText);
+
+  if (!topClass && !hasSpecialCat && !hasChildren && !hasCrossCtx && !hasTransfer) {
+    wrap.classList.remove('visible');
+    return;
+  }
+
+  const measures = [];
+
+  if (topClass === 'Restricted' || hasSpecialCat) {
+    measures.push('AES-256 encryption at rest; TLS 1.2+ in transit; multi-factor authentication required for all system access; data minimisation to strictly necessary fields; comprehensive access and activity logging; prohibition on personal device access (Akkio Classification Policy)');
+  } else if (topClass === 'Confidential') {
+    measures.push('Encryption at rest and in transit; role-based access controls; quarterly access reviews; activity logging');
+  } else {
+    measures.push('Access on need-to-know basis; encryption in transit; data minimisation at collection point');
+  }
+
+  if (hasChildren)   measures.push('age verification before data collection; parental consent mechanism; no behavioural profiling or targeted advertising to minors');
+  if (hasCrossCtx)   measures.push('opt-out mechanism for cross-context advertising; preference centre; data not shared until opt-out confirmed');
+  if (hasTransfer)   measures.push('Standard Contractual Clauses (SCCs) or UK IDTA in place; transfer impact assessment completed');
+
+  measures.push('privacy by default; purpose limitation enforced at application layer; DPAs in place with all processors');
+
+  const suggestion = measures.join('; ');
+  pendingPBDValue  = suggestion;
+  const preview    = suggestion.length > 80 ? suggestion.slice(0, 80) + '…' : suggestion;
+  document.getElementById('pbd-suggest-text').textContent = preview;
+  wrap.classList.add('visible');
+}
+
+function applyPBDSuggestion() {
+  const ta = document.getElementById('nec-pbd');
+  if (ta && pendingPBDValue) ta.value = pendingPBDValue;
+  document.getElementById('pbd-suggest-wrap').classList.remove('visible');
+  autosave();
+  showToast('✓ Privacy by design measures applied');
+}
+
+// ── CCPA consumer rights auto-select ───────────────────────────────────────
+// Maps right value → {always, keywords, tooltip-reason}
+const CCPA_RIGHTS_RULES = {
+  'Know':
+    { always: true },
+  'Delete':
+    { always: true },
+  'Opt-Out':
+    { keywords: ['advertis','marketing','cross-context','retarget','third party','sell','share data',
+        'ad network','programmatic','behavioral','behavioural','lookalike','custom audience',
+        'facebook','google ads','tiktok','liveramp','data broker','audience segment'] },
+  'Correct':
+    { keywords: ['profile','account','customer data','user data','name','email','address',
+        'contact','demographic','preference','personal information','user profile','employee'] },
+  'Limit':
+    { keywords: ['health','medical','phi','biometric','genetic','racial','ethnic','precise location',
+        'geolocation','gps','trade union','religion','sexual orientation','immigration',
+        'financial account','credential','ssn','social security','criminal'] },
+  'Portability':
+    { keywords: ['account','subscription','customer data','user data','profile','purchase history',
+        'order history','personal data','dataset','saas','platform user'] }
+};
+
+function autoSelectCCPARights(text) {
+  const lower = text.toLowerCase();
+  const wordCount = lower.trim().split(/\s+/).filter(Boolean).length;
+  if (wordCount < 5) return;
+
+  let anyApplied = false;
+  document.querySelectorAll('#ccpa-rights-wrap input[type=checkbox]').forEach(cb => {
+    const rule = CCPA_RIGHTS_RULES[cb.value];
+    if (!rule) return;
+    const shouldCheck = rule.always || (rule.keywords && rule.keywords.some(kw => lower.includes(kw)));
+    if (shouldCheck && !cb.checked) {
+      cb.checked = true;
+      anyApplied = true;
+    }
+  });
+
+  const note = document.getElementById('ccpa-auto-note');
+  if (note && anyApplied) note.classList.add('visible');
+  autosave();
+}
+
+// ── State ─────────────────────────────────────────────────────────────────
+let currentSection = 0;
+const TOTAL = 7;
+
+const DEFAULT_RISKS = [
+  { risk: "Unauthorised access or data breach", mitigation: "" },
+  { risk: "Unlawful collection beyond stated purpose", mitigation: "" },
+  { risk: "Inaccurate or outdated data used in decisions", mitigation: "" },
+  { risk: "Cross-border transfer without adequate safeguards", mitigation: "" },
+  { risk: "Failure to honour data subject / consumer rights", mitigation: "" },
+  { risk: "Profiling or automated decision-making bias", mitigation: "" },
+  { risk: "Retention beyond stated period", mitigation: "" },
+  { risk: "Third-party / vendor data misuse", mitigation: "" }
+];
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function goTo(idx) {
+  document.getElementById('panel-' + currentSection).classList.remove('active');
+  document.querySelectorAll('.nav-item')[currentSection].classList.remove('active');
+  if (currentSection < idx) {
+    document.querySelectorAll('.nav-item')[currentSection].classList.add('done');
+  }
+  currentSection = idx;
+  document.getElementById('panel-' + currentSection).classList.add('active');
+  document.querySelectorAll('.nav-item')[currentSection].classList.add('active');
+  document.querySelectorAll('.nav-item')[currentSection].classList.remove('done');
+
+  const labels = ['Data Request','Legal — 1 of 5','Legal — 2 of 5','Legal — 3 of 5','Legal — 4 of 5','Legal — 5 of 5','Review'];
+  document.getElementById('topbar-section').textContent = labels[idx] || '';
+
+  updateProgress();
+  updateSummary();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress() {
+  const pct = Math.round((currentSection / (TOTAL - 1)) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+// ── Risk table ─────────────────────────────────────────────────────────────
+function ratingSelect(name, id) {
+  return `<select id="${id}" onchange="updateRiskOverall('${id}');autosave()">
+    <option value="">—</option>
+    <option>Low</option>
+    <option>Medium</option>
+    <option>High</option>
+  </select>`;
+}
+
+function addRiskRow(prefill) {
+  const tbody = document.getElementById('risk-tbody');
+  const idx = tbody.rows.length;
+  const row = tbody.insertRow();
+  row.className = 'risk-row';
+  const label = (prefill && prefill.risk) ? prefill.risk : '';
+  row.innerHTML = `
+    <td>
+      <div class="risk-label">${label ? label : `<input type="text" placeholder="Describe risk…" oninput="autosave()" style="font-size:12px;padding:6px 8px;">`}</div>
+    </td>
+    <td>${ratingSelect('lh','risk-lh-'+idx)}</td>
+    <td>${ratingSelect('sv','risk-sv-'+idx)}</td>
+    <td><span id="risk-ov-${idx}" style="font-size:12px;color:var(--text-2)">—</span></td>
+    <td><textarea placeholder="Describe control…" oninput="autosave()" style="min-height:56px;font-size:12px;padding:6px 8px;"></textarea></td>
+  `;
+  // Default both dropdowns to Low
+  const lhEl = document.getElementById('risk-lh-' + idx);
+  const svEl = document.getElementById('risk-sv-' + idx);
+  if (lhEl) lhEl.value = 'Low';
+  if (svEl) svEl.value = 'Low';
+  updateRiskOverall('risk-lh-' + idx);
+  if (prefill && prefill.risk) {
+    // Replace the div with static text
+    row.cells[0].innerHTML = `<div class="risk-label">${prefill.risk}</div>`;
+  }
+}
+
+function updateRiskOverall(id) {
+  const idx = id.split('-').pop();
+  const lh = document.getElementById('risk-lh-'+idx)?.value;
+  const sv = document.getElementById('risk-sv-'+idx)?.value;
+  const map = { '': 0, Low: 1, Medium: 2, High: 3 };
+  const score = (map[lh] || 0) + (map[sv] || 0);
+  const el = document.getElementById('risk-ov-'+idx);
+  if (!el) return;
+  if (score === 0) { el.textContent = '—'; el.className = ''; }
+  else if (score <= 2) { el.innerHTML = '<span class="badge-pill pill-low">Low</span>'; }
+  else if (score <= 4) { el.innerHTML = '<span class="badge-pill pill-med">Medium</span>'; }
+  else { el.innerHTML = '<span class="badge-pill pill-high">High</span>'; }
+  updateOverallRisk();
+}
+
+function updateOverallRisk() {
+  const badge = document.getElementById('risk-overall-badge');
+  const note  = document.getElementById('risk-overall-note');
+  const card  = document.getElementById('residual-risk-card');
+  if (!badge) return;
+
+  // Collect all rated row-level scores
+  const rows  = document.querySelectorAll('#risk-tbody .risk-row');
+  const map   = { '': 0, Low: 1, Medium: 2, High: 3 };
+  let hasHigh = false, medCount = 0, ratedCount = 0;
+
+  rows.forEach((_, i) => {
+    const lh  = document.getElementById('risk-lh-' + i)?.value || '';
+    const sv  = document.getElementById('risk-sv-' + i)?.value || '';
+    if (!lh && !sv) return;
+    ratedCount++;
+    const score = (map[lh] || 0) + (map[sv] || 0);
+    if (score >= 5) hasHigh = true;
+    else if (score >= 3) medCount++;
+  });
+
+  if (ratedCount === 0) {
+    badge.innerHTML = '—';
+    badge.style.color = 'var(--text-3)';
+    if (note) note.textContent = '';
+    if (card) card.style.display = 'none';
+    return;
+  }
+
+  // Threshold logic: High if any High row; Medium only if ≥2 medium/high-scoring rows
+  // OR if more than half the rated rows are medium — prevents 1 medium out of 8 low flagging as Medium
+  const medThreshold = Math.max(2, Math.ceil(ratedCount / 2));
+
+  let level, pillClass, noteText, resLevel;
+  if (hasHigh) {
+    level = 'High'; pillClass = 'pill-high';
+    noteText = 'One or more high risks identified — DPO approval required';
+    resLevel = 'High — DPO approval required';
+  } else if (medCount >= medThreshold) {
+    level = 'Medium'; pillClass = 'pill-med';
+    noteText = 'Medium risks present — proceed with monitoring and mitigations';
+    resLevel = 'Medium — proceed with monitoring';
+  } else {
+    level = 'Low'; pillClass = 'pill-low';
+    noteText = 'All rated risks are low — acceptable to proceed';
+    resLevel = 'Low — acceptable, proceed';
+  }
+
+  badge.innerHTML = `<span class="badge-pill ${pillClass}">${level}</span>`;
+  if (note) note.textContent = noteText;
+
+  // Show/hide residual risk card
+  if (card) {
+    const show = level !== 'Low';
+    card.style.display = show ? 'block' : 'none';
+    if (show) card.style.animation = 'fadeIn .2s ease';
+    // Auto-suggest res-level if not already set by user
+    const resSel = document.getElementById('res-level');
+    if (resSel && !resSel.dataset.edited) resSel.value = resLevel;
+  }
+  autosave();
+}
+
+// ── Classification & retention rules — aligned to Akkio Data Classification
+//    Policy v2.0 and Data Retention Policy v3.0
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GDPR Art. 9 / Art. 10 sensitivity detection
+const SENSITIVITY_RULES = [
+  { keywords: ['health','medical','diagnosis','condition','treatment','clinical','prescription','mental health','disability','patient','phi','protected health','therapy','psychiatric'], label: 'Yes — health data', reason: 'GDPR Art. 9 / HIPAA' },
+  { keywords: ['biometric','fingerprint','facial recogni','iris scan','retina','voiceprint','face id'], label: 'Yes — biometric', reason: 'GDPR Art. 9' },
+  { keywords: ['genetic','dna','genome','genomic'], label: 'Yes — genetic', reason: 'GDPR Art. 9' },
+  { keywords: ['racial','ethnic','race','ethnicity'], label: 'Yes — racial/ethnic', reason: 'GDPR Art. 9' },
+  { keywords: ['political opinion','political view','political affil','political belief'], label: 'Yes — political', reason: 'GDPR Art. 9' },
+  { keywords: ['religion','religious','philosophical belief','faith','denomination'], label: 'Yes — religious', reason: 'GDPR Art. 9' },
+  { keywords: ['trade union','union membership'], label: 'Yes — trade union', reason: 'GDPR Art. 9' },
+  { keywords: ['sexual orientation','sex life','gender identity','lgbtq'], label: 'Yes — sexual orientation', reason: 'GDPR Art. 9' },
+  { keywords: ['criminal','conviction','offence','offense','arrest','caution','dbs','crb'], label: 'Yes — criminal', reason: 'GDPR Art. 10' },
+];
+
+// Akkio 4-tier classification (Restricted → Confidential → Internal → Public)
+// Per Akkio Data Classification Policy v2.0 — ordered most-specific first
+const AKKIO_CLASS_RULES = [
+  {
+    akkioClass: 'Restricted',
+    color: '#f05252', bg: '#f0525218', border: '#f0525235',
+    desc: 'Highly sensitive — legal/contractual protection required',
+    keywords: [
+      'phi','protected health','medical record','health record','patient data',
+      'ssn','social security','passport number',"driver's license",'drivers license',
+      'national id','government id','tax id','ein',
+      'payment card','credit card','debit card','pci','card number','cvv','card data',
+      'password','credential','auth token','api key','encryption key','private key','secret key','mfa seed',
+      'bank account','financial account','account number','routing number','sort code','iban',
+      'biometric','fingerprint','facial recogni','iris scan','genetic','dna',
+      'health','medical','diagnosis','treatment','clinical','prescription','mental health','disability','patient',
+      'baa','data processing agreement'
+    ]
+  },
+  {
+    akkioClass: 'Confidential',
+    color: '#f5a623', bg: '#f5a62318', border: '#f5a62335',
+    desc: 'Sensitive business data — internal protection required',
+    keywords: [
+      'financial record','financial projection','revenue','invoice','billing','transaction',
+      'purchase history','order history','payment history','subscription',
+      'customer list','customer data','customer profile','account detail','contract detail','customer contact',
+      'employee','employment','hr data','salary','compensation','payroll','pension','performance review',
+      'recruitment','cv','resume','job applicant',
+      'source code','algorithm','proprietary','trade secret','strategic plan','business plan','roadmap',
+      'name','email address','email','phone','phone number','address','postal','zip code',
+      'date of birth','dob','age','ip address','device id','user id','username','account id',
+      'cookie','clickstream','session data','web analytics','browsing history','location','geolocation',
+      'purchase','order','preference','profile','demographic'
+    ]
+  },
+  {
+    akkioClass: 'Internal',
+    color: '#5b6cf9', bg: '#5b6cf918', border: '#5b6cf935',
+    desc: 'Internal use only — not for external sharing',
+    keywords: [
+      'audit log','access log','event log','system log','security log','activity log',
+      'internal policy','procedure','meeting note','training material','project doc',
+      'internal communication','slack','internal email'
+    ]
+  },
+  {
+    akkioClass: 'Public',
+    color: '#34c97b', bg: '#34c97b18', border: '#34c97b35',
+    desc: 'Approved for public release',
+    keywords: [
+      'marketing material','press release','job posting','public announcement',
+      'website content','published doc','product doc','blog post'
+    ]
+  }
+];
+
+// Retention periods — sourced directly from Akkio Data Retention Policy v3.0
+// and Data Classification Policy v2.0. Most-specific rules listed first.
+const RETENTION_RULES = [
+  { keywords: ['audit log','access log','security log','event log','security documentation','incident response','compliance audit','access control record'],
+    suggestion: '7 years minimum (Akkio Retention Policy — security & audit documentation)' },
+  { keywords: ['phi','protected health','medical record','patient data','health record','hipaa'],
+    suggestion: 'Min. 6 years (HIPAA) — Restricted per Akkio Classification Policy' },
+  { keywords: ['payment card','credit card','pci','card data','card number'],
+    suggestion: 'Per PCI DSS requirements — Restricted per Akkio Classification Policy' },
+  { keywords: ['ssn','social security','passport number','government id',"driver's license",'national id'],
+    suggestion: 'As required by law/contract — Restricted per Akkio Classification Policy' },
+  { keywords: ['password','credential','api key','encryption key','private key','auth token'],
+    suggestion: 'Duration of account; delete immediately on revocation — Restricted' },
+  { keywords: ['criminal','conviction','dbs','crb','legal hold'],
+    suggestion: 'Legal hold — consult Akkio General Counsel (Akkio Retention Policy)' },
+  { keywords: ['biometric','fingerprint','facial recogni','genetic','dna'],
+    suggestion: 'Minimum necessary; delete promptly after use — Restricted per Akkio Classification Policy' },
+  { keywords: ['financial record','financial projection','invoice','billing','tax','revenue','transaction','payment history','payroll','salary','compensation'],
+    suggestion: '7 years or as required by contract (Akkio Retention Policy — Confidential)' },
+  { keywords: ['employee','employment','hr data','performance review','recruitment','cv','resume','pension'],
+    suggestion: '7 years or as required by contract (Akkio Retention Policy — Confidential)' },
+  { keywords: ['source code','algorithm','proprietary','trade secret','strategic plan'],
+    suggestion: '7 years or as required by contract (Akkio Retention Policy — Confidential)' },
+  { keywords: ['customer list','customer data','customer profile','account detail','contract detail','subscription'],
+    suggestion: 'Duration of active account; deleted within 2 days of account closure (Akkio Retention Policy — Confidential)' },
+  { keywords: ['name','email','phone','address','contact','user id','username','account id','demographic','preference','profile','purchase','order'],
+    suggestion: 'Duration of active account; deleted within 2 days of closure (Akkio Retention Policy — Confidential)' },
+  { keywords: ['cookie','clickstream','session','web analytic','browsing','page view','heatmap','event tracking'],
+    suggestion: '3 years or business need (Akkio Retention Policy — Internal); confirm against ICO 13-month analytics guidance' },
+  { keywords: ['ip address','device id','user agent','device identifier'],
+    suggestion: '3 years or business need (Akkio Retention Policy — Internal)' },
+  { keywords: ['location','geolocation','gps'],
+    suggestion: '3 years or business need — confirm proportionality (Akkio Retention Policy — Internal/Confidential)' },
+  { keywords: ['internal policy','procedure','meeting note','training','project doc','internal communication'],
+    suggestion: '3 years or business need (Akkio Retention Policy — Internal)' },
+  { keywords: ['marketing material','press release','job posting','public','published'],
+    suggestion: 'As needed for business purposes (Akkio Retention Policy — Public)' },
+];
+
+function classifyDataCategory(text) {
+  const lower = text.toLowerCase().trim();
+  if (lower.length < 2) return { sensitive: null, akkioClass: null, retention: null };
+
+  const sensMatch  = SENSITIVITY_RULES.find(r => r.keywords.some(kw => lower.includes(kw)));
+  const classMatch = AKKIO_CLASS_RULES.find(r => r.keywords.some(kw => lower.includes(kw)));
+  const retMatch   = RETENTION_RULES.find(r => r.keywords.some(kw => lower.includes(kw)));
+
+  // Fall back to class-based retention if no specific rule matched
+  let retSuggestion = retMatch ? retMatch.suggestion : null;
+  if (!retSuggestion && classMatch) {
+    const fallbacks = {
+      'Restricted':   'As required by law/contract — Restricted per Akkio Classification Policy',
+      'Confidential': '7 years or as required by contract (Akkio Retention Policy — Confidential)',
+      'Internal':     '3 years or business need (Akkio Retention Policy — Internal)',
+      'Public':       'As needed for business purposes (Akkio Retention Policy — Public)'
+    };
+    retSuggestion = fallbacks[classMatch.akkioClass] || null;
+  }
+
+  return {
+    sensitive:  sensMatch  ? { label: sensMatch.label, reason: sensMatch.reason } : { label: 'No', reason: 'No GDPR Art. 9 / Art. 10 indicators' },
+    akkioClass: classMatch || null,
+    retention:  retSuggestion
+  };
+}
+
+function updateDataRow(input) {
+  const row = input.closest('tr');
+  if (!row) return;
+
+  const result = classifyDataCategory(input.value);
+
+  // Update sensitive cell — shows GDPR Art. 9 badge + Akkio classification tier
+  const sensCell = row.querySelector('.sens-cell');
+  if (sensCell && result.sensitive) {
+    const isYes = result.sensitive.label.startsWith('Yes');
+    const cls   = result.akkioClass;
+
+    const gdprTooltip = isYes
+      ? `${result.sensitive.reason} — special category data requiring explicit consent or an Art. 9(2) exemption under GDPR`
+      : `No GDPR Art. 9 / Art. 10 special category or criminal record indicators detected`;
+
+    const gdprBadge = `<span data-tooltip="${gdprTooltip}" style="
+        display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;cursor:help;
+        background:${isYes ? '#f0525218' : '#34c97b18'};
+        color:${isYes ? '#f05252' : '#34c97b'};
+        border:1px solid ${isYes ? '#f0525235' : '#34c97b30'};
+      ">${result.sensitive.label}</span>
+      <span style="font-size:10px;color:var(--text-3);">${result.sensitive.reason}</span>`;
+
+    const classBadge = cls ? `
+      <div style="margin-top:5px;display:flex;align-items:center;gap:5px;">
+        <span style="font-size:10px;color:var(--text-3);">Akkio:</span>
+        <span data-tooltip="${cls.desc} — Akkio Classification Policy v2.0" style="
+          display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;cursor:help;
+          background:${cls.bg};color:${cls.color};border:1px solid ${cls.border};
+        ">${cls.akkioClass}</span>
+      </div>` : '';
+
+    sensCell.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${gdprBadge}</div>
+      ${classBadge}
+      <button onclick="overrideSens(this)" style="margin-top:6px;font-size:10.5px;background:none;border:none;color:var(--text-3);cursor:pointer;padding:0;font-family:var(--font);">Override ↓</button>`;
+  }
+
+  // Re-evaluate privacy by design suggestions whenever data rows change
+  suggestPrivacyByDesign();
+
+  // Update retention cell
+  const retInput = row.querySelector('.ret-input');
+  if (retInput && result.retention && !retInput.dataset.edited) {
+    retInput.value = result.retention;
+    retInput.style.color = 'var(--text-2)';
+    retInput.style.fontStyle = 'italic';
+    retInput.dataset.suggested = result.retention;
+    retInput.setAttribute('data-tooltip', result.retention);
+    autosave();
+  }
+}
+
+function overrideSens(btn) {
+  const cell = btn.parentElement;
+  cell.innerHTML = `<select onchange="autosave()" style="font-size:12px;padding:6px 8px;">
+    <option value="">—</option>
+    <option>Yes — health data</option>
+    <option>Yes — biometric</option>
+    <option>Yes — genetic</option>
+    <option>Yes — racial/ethnic</option>
+    <option>Yes — political</option>
+    <option>Yes — religious/philosophical</option>
+    <option>Yes — trade union</option>
+    <option>Yes — sexual orientation</option>
+    <option>Yes — criminal</option>
+    <option>Yes — govt ID</option>
+    <option>Yes — financial account</option>
+    <option>Yes — precise location</option>
+    <option>No</option>
+  </select>`;
+}
+
+// ── Data category table ────────────────────────────────────────────────────
+function addDataRow() {
+  const tbody = document.getElementById('data-tbody');
+  const row = tbody.insertRow();
+  row.innerHTML = `
+    <td><input type="text" class="cat-input" placeholder="e.g. Email address, purchase history…"
+      oninput="updateDataRow(this); autosave()" /></td>
+    <td class="sens-cell" style="vertical-align:top;padding-top:10px;">
+      <span style="font-size:12px;color:var(--text-3);font-style:italic;">type a category →</span>
+    </td>
+    <td><input type="text" placeholder="e.g. User-provided, third party" oninput="autosave()"/></td>
+    <td><input type="text" class="ret-input" placeholder="auto-suggested from category"
+      oninput="this.dataset.edited='1'; this.style.color=''; this.style.fontStyle=''; autosave()"
+      style="color:var(--text-3);font-style:italic;" /></td>
+    <td><button class="icon-btn" onclick="this.closest('tr').remove();autosave()">✕</button></td>
+  `;
+}
+
+// ── Third party flows table ────────────────────────────────────────────────
+function addFlowRow() {
+  const tbody = document.getElementById('flows-tbody');
+  const row = tbody.insertRow();
+  row.innerHTML = `
+    <td><input type="text" placeholder="e.g. AWS, Salesforce" oninput="autosave()"/></td>
+    <td><select onchange="autosave()">
+      <option value="">Select role</option>
+      <option>Processor</option>
+      <option>Joint Controller</option>
+      <option>Third Party</option>
+      <option>Sub-processor</option>
+    </select></td>
+    <td><select onchange="autosave()">
+      <option value="">Select mechanism</option>
+      <option>N/A — no international transfer</option>
+      <option>Adequacy decision</option>
+      <option>Standard Contractual Clauses (SCCs)</option>
+      <option>Binding Corporate Rules (BCRs)</option>
+      <option>UK IDTA</option>
+      <option>Other</option>
+    </select></td>
+    <td><select onchange="autosave()">
+      <option value="">Select</option>
+      <option>Yes — in place</option>
+      <option>In progress</option>
+      <option>No — required</option>
+    </select></td>
+    <td><button class="icon-btn" onclick="this.closest('tr').remove();autosave()">✕</button></td>
+  `;
+}
+
+// ── Summary / review ──────────────────────────────────────────────────────
+function updateSummary() {
+  const pn = document.getElementById('proj-name')?.value || '—';
+  const oc = document.getElementById('out-outcome')?.value || '—';
+  document.getElementById('sum-project').textContent = pn.length > 20 ? pn.slice(0,20)+'…' : pn;
+  document.getElementById('sum-outcome').textContent = oc.replace(/^[^\s]+ /, '');
+  document.getElementById('sum-risks').textContent = document.getElementById('risk-tbody')?.rows.length || 0;
+  document.getElementById('sum-parties').textContent = document.getElementById('flows-tbody')?.rows.length || 0;
+
+  const gdpr = document.getElementById('purp-gdpr')?.value || '—';
+  const ccpa = document.getElementById('purp-ccpa')?.value || '—';
+  const res = document.getElementById('res-level')?.value || '—';
+  const dpo = document.getElementById('dpo-opinion')?.value || '—';
+  document.getElementById('review-summary').innerHTML = `
+    <b style="color:var(--text)">Project:</b> ${pn}<br>
+    <b style="color:var(--text)">GDPR basis:</b> ${gdpr}<br>
+    <b style="color:var(--text)">CCPA purpose:</b> ${ccpa}<br>
+    <b style="color:var(--text)">Residual risk:</b> ${res}<br>
+    <b style="color:var(--text)">DPO opinion:</b> ${dpo}<br>
+    <b style="color:var(--text)">Outcome:</b> ${oc}
+  `;
+}
+
+// ── Export / save ─────────────────────────────────────────────────────────
+function gatherData() {
+  const data = {};
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.id) {
+      if (el.type === 'checkbox') {
+        if (!data.ccpa_rights) data.ccpa_rights = [];
+        if (el.checked) data.ccpa_rights.push(el.value);
+      } else {
+        data[el.id] = el.value;
+      }
+    }
+  });
+  return data;
+}
+
+function buildCleanExport() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+
+  // Data inventory rows
+  const dataInventory = [];
+  document.querySelectorAll('#data-tbody tr').forEach(row => {
+    const cells = row.querySelectorAll('input, select');
+    const name = cells[0]?.value?.trim();
+    if (name) dataInventory.push({
+      data_type:   name,
+      sensitivity: cells[1]?.value || '',
+      legal_basis: cells[2]?.value || '',
+      retention:   cells[3]?.value || ''
+    });
+  });
+
+  // Third-party flows
+  const thirdParties = [];
+  document.querySelectorAll('#flows-tbody tr').forEach(row => {
+    const cells = row.querySelectorAll('input, select');
+    const name = cells[0]?.value?.trim();
+    if (name) thirdParties.push({
+      party:     name,
+      role:      cells[1]?.value || '',
+      location:  cells[2]?.value || '',
+      safeguard: cells[3]?.value || ''
+    });
+  });
+
+  // Risk register
+  const risks = [];
+  document.querySelectorAll('#risk-tbody .risk-row').forEach((_, i) => {
+    const desc = document.getElementById('risk-desc-' + i)?.value?.trim();
+    const lh   = document.getElementById('risk-lh-' + i)?.value || '';
+    const sv   = document.getElementById('risk-sv-' + i)?.value || '';
+    const mit  = document.getElementById('risk-mit-' + i)?.value?.trim() || '';
+    if (desc) risks.push({ risk: desc, likelihood: lh, severity: sv, mitigation: mit });
+  });
+
+  // CCPA rights
+  const ccpaRights = [];
+  document.querySelectorAll('#ccpa-rights-wrap input[type=checkbox]').forEach(cb => {
+    if (cb.checked) ccpaRights.push(cb.value);
+  });
+
+  const overallRisk = (document.getElementById('risk-overall-badge')?.textContent || '').trim() || v('res-level');
+
+  return {
+    _meta: {
+      document_type: "DPIA",
+      form_version:  "2.0",
+      exported_at:   new Date().toISOString(),
+      exported_date: new Date().toISOString().slice(0, 10)
+    },
+    project: {
+      name:               v('proj-name'),
+      business_owner:     v('proj-owner'),
+      start_date:         v('proj-date-start'),
+      review_date:        v('proj-date-review'),
+      status:             v('proj-status'),
+      trigger_reason:     v('proj-trigger'),
+      description:        v('proj-desc')
+    },
+    scope: {
+      geographic:         v('scope-geo'),
+      duration:           v('scope-dur'),
+      estimated_subjects: v('scope-vol')
+    },
+    data_subjects: {
+      categories:         v('ds-cats'),
+      vulnerable_groups:  v('ds-vuln'),
+      safeguards:         v('ds-safeguard'),
+      ccpa_rights_applicable: ccpaRights
+    },
+    data_inventory: dataInventory,
+    third_party_flows: thirdParties,
+    legal_basis: {
+      gdpr_basis:         v('purp-gdpr'),
+      ccpa_purpose:       v('purp-ccpa'),
+      lia_assessment:     v('purp-lit'),
+      cross_context_advertising: v('purp-sold')
+    },
+    risk_assessment: {
+      overall_risk:       overallRisk,
+      residual_risk_level: v('res-level'),
+      residual_risk_acceptable: v('res-ok'),
+      outstanding_measures: v('res-measures'),
+      risks:              risks
+    },
+    dpo_consultation: {
+      dpo_consulted:      v('dpo-consulted'),
+      consultation_date:  v('dpo-date'),
+      dpo_opinion:        v('dpo-opinion'),
+      dpo_notes:          v('dpo-notes')
+    },
+    decision: {
+      outcome:            v('out-outcome'),
+      conditions:         v('out-conditions'),
+      next_review_date:   v('out-review')
+    },
+    sign_offs: {
+      business_owner: { name: v('so-bo-name'), date: v('so-bo-date') },
+      legal:          { name: v('so-leg-name'), date: v('so-leg-date') },
+      security:       { name: v('so-sec-name'), date: v('so-sec-date') }
+    }
+  };
+}
+
+function buildTextExport(d) {
+  const fmt = val => val || '—';
+  const yn  = arr => arr && arr.length ? arr.join(', ') : '—';
+
+  const riskLines = (d.risk_assessment.risks || []).map((r, i) =>
+    `  ${i+1}. ${r.risk}\n     Likelihood: ${r.likelihood} | Severity: ${r.severity}\n     Mitigation: ${r.mitigation || '—'}`
+  ).join('\n');
+
+  const dataLines = (d.data_inventory || []).map((r, i) =>
+    `  ${i+1}. ${r.data_type} (sensitivity: ${r.sensitivity}, retained: ${r.retention})`
+  ).join('\n');
+
+  const flowLines = (d.third_party_flows || []).map((r, i) =>
+    `  ${i+1}. ${r.party} — role: ${r.role}, location: ${r.location}, safeguard: ${r.safeguard}`
+  ).join('\n');
+
+  return `DPIA — DATA PROTECTION IMPACT ASSESSMENT
+document_type: DPIA
+form_version: ${d._meta.form_version}
+exported_date: ${d._meta.exported_date}
+
+════════════════════════════════════════════
+PROJECT
+════════════════════════════════════════════
+project_name: ${fmt(d.project.name)}
+business_owner: ${fmt(d.project.business_owner)}
+start_date: ${fmt(d.project.start_date)}
+review_date: ${fmt(d.project.review_date)}
+status: ${fmt(d.project.status)}
+trigger_reason: ${fmt(d.project.trigger_reason)}
+description: ${fmt(d.project.description)}
+
+════════════════════════════════════════════
+SCOPE
+════════════════════════════════════════════
+geographic_scope: ${fmt(d.scope.geographic)}
+duration: ${fmt(d.scope.duration)}
+estimated_data_subjects: ${fmt(d.scope.estimated_subjects)}
+
+════════════════════════════════════════════
+DATA SUBJECTS
+════════════════════════════════════════════
+subject_categories: ${fmt(d.data_subjects.categories)}
+vulnerable_groups: ${fmt(d.data_subjects.vulnerable_groups)}
+safeguards: ${fmt(d.data_subjects.safeguards)}
+ccpa_rights_applicable: ${yn(d.data_subjects.ccpa_rights_applicable)}
+
+════════════════════════════════════════════
+DATA INVENTORY
+════════════════════════════════════════════
+${dataLines || '  (none recorded)'}
+
+════════════════════════════════════════════
+THIRD PARTY DATA FLOWS
+════════════════════════════════════════════
+${flowLines || '  (none recorded)'}
+
+════════════════════════════════════════════
+LEGAL BASIS
+════════════════════════════════════════════
+gdpr_basis: ${fmt(d.legal_basis.gdpr_basis)}
+ccpa_purpose: ${fmt(d.legal_basis.ccpa_purpose)}
+cross_context_advertising: ${fmt(d.legal_basis.cross_context_advertising)}
+lia_assessment: ${fmt(d.legal_basis.lia_assessment)}
+
+════════════════════════════════════════════
+RISK ASSESSMENT
+════════════════════════════════════════════
+overall_risk: ${fmt(d.risk_assessment.overall_risk)}
+residual_risk_level: ${fmt(d.risk_assessment.residual_risk_level)}
+residual_risk_acceptable: ${fmt(d.risk_assessment.residual_risk_acceptable)}
+outstanding_measures: ${fmt(d.risk_assessment.outstanding_measures)}
+
+Risk register:
+${riskLines || '  (none recorded)'}
+
+════════════════════════════════════════════
+DPO CONSULTATION
+════════════════════════════════════════════
+dpo_consulted: ${fmt(d.dpo_consultation.dpo_consulted)}
+consultation_date: ${fmt(d.dpo_consultation.consultation_date)}
+dpo_opinion: ${fmt(d.dpo_consultation.dpo_opinion)}
+dpo_notes: ${fmt(d.dpo_consultation.dpo_notes)}
+
+════════════════════════════════════════════
+DECISION & SIGN-OFF
+════════════════════════════════════════════
+outcome: ${fmt(d.decision.outcome)}
+conditions: ${fmt(d.decision.conditions)}
+next_review_date: ${fmt(d.decision.next_review_date)}
+signoff_business_owner: ${fmt(d.sign_offs.business_owner.name)} on ${fmt(d.sign_offs.business_owner.date)}
+signoff_legal: ${fmt(d.sign_offs.legal.name)} on ${fmt(d.sign_offs.legal.date)}
+signoff_security: ${fmt(d.sign_offs.security.name)} on ${fmt(d.sign_offs.security.date)}
+`;
+}
+
+function exportJSON() {
+  const data = buildCleanExport();
+  const text = buildTextExport(data);
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  const proj = data.project.name || 'DPIA';
+  a.download = proj.replace(/[^a-z0-9]/gi, '_') + '_DPIA.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Exported — save to your Google Drive "DPIA" folder');
+}
+
+function copyText() {
+  const pn = document.getElementById('proj-name')?.value || '—';
+  const txt = document.getElementById('review-summary')?.innerText || '';
+  navigator.clipboard.writeText(`DPIA Summary — ${pn}\n\n${txt}`).then(() => showToast('✓ Copied to clipboard'));
+}
+
+// ── Export Register Row ────────────────────────────────────────────────────
+// Builds a tab-separated row matching the DPIA Register spreadsheet columns
+function exportRegisterRow() {
+  const d = buildCleanExport();
+
+  const fields = [
+    d.project.name,
+    d.project.business_owner,
+    d.project.start_date,
+    d.project.review_date,
+    d.project.status,
+    d.legal_basis.gdpr_basis,
+    d.legal_basis.ccpa_purpose,
+    d.risk_assessment.overall_risk,
+    d.dpo_consultation.dpo_opinion,
+    d.decision.outcome,
+    String(d.risk_assessment.risks.length),
+    String(d.third_party_flows.length),
+    d._meta.exported_date
+  ];
+
+  const row = fields.join('\t');
+  const out = document.getElementById('register-row-output');
+  document.getElementById('register-row-text').value = row;
+  if (out) out.style.display = 'block';
+  navigator.clipboard.writeText(row).catch(() => {});
+  showToast('✓ Register row copied — paste into your DPIA Register');
+}
+
+function copyRegisterRow() {
+  const text = document.getElementById('register-row-text')?.value || '';
+  navigator.clipboard.writeText(text).then(() => showToast('✓ Copied to clipboard'));
+}
+
+function autoSetReviewDate() {
+  const start  = document.getElementById('proj-date-start')?.value;
+  const review = document.getElementById('proj-date-review');
+  if (!start || !review || review.dataset.edited) return;
+  const d = new Date(start);
+  d.setFullYear(d.getFullYear() + 1);
+  review.value = d.toISOString().slice(0, 10);
+  syncReviewDate();
+}
+
+function syncReviewDate() {
+  const val = document.getElementById('proj-date-review')?.value;
+  const out  = document.getElementById('out-review');
+  if (out && val) out.value = val;
+}
+
+function autosave() { saveLocal(); updateSummary(); }
+
+function saveLocal() {
+  try {
+    localStorage.setItem('dpia_draft', JSON.stringify(gatherData()));
+    showToast('💾 Draft saved');
+  } catch(e) {}
+}
+
+function loadLocal() {
+  try {
+    const raw = localStorage.getItem('dpia_draft');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.entries(data).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el && el.type !== 'checkbox') el.value = val;
+    });
+    if (data.ccpa_rights) {
+      document.querySelectorAll('#ccpa-rights-wrap input[type=checkbox]').forEach(cb => {
+        cb.checked = data.ccpa_rights.includes(cb.value);
+      });
+    }
+    // Restore conditional fields
+    toggleLIField();
+    toggleSafeguardField();
+    syncReviewDate();
+    updateOverallRisk();
+    checkSignoffs();
+    if (data['proj-desc']) {
+      const crossHits = detectCrossContext(data['proj-desc']);
+      showCrossContextAlert(crossHits);
+    }
+  } catch(e) {}
+}
+
+function clearAll() {
+  if (!confirm('Clear all form data? This cannot be undone.')) return;
+  localStorage.removeItem('dpia_draft');
+  document.querySelectorAll('input:not([type=checkbox]), select, textarea').forEach(el => el.value = '');
+  document.querySelectorAll('input[type=checkbox]').forEach(el => el.checked = false);
+  document.getElementById('data-tbody').innerHTML = '';
+  document.getElementById('flows-tbody').innerHTML = '';
+  document.getElementById('risk-tbody').innerHTML = '';
+  initRisks();
+  showToast('🗑 Cleared');
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function initRisks() {
+  DEFAULT_RISKS.forEach(r => addRiskRow(r));
+}
+
+function init() {
+  const params = new URLSearchParams(window.location.search);
+
+  // ?new=1 → wipe saved draft so every new user starts fresh
+  if (params.get('new') === '1') {
+    localStorage.removeItem('dpia_draft');
+    history.replaceState(null, '', window.location.pathname);
+    showToast('🆕 New DPIA started');
+  }
+
+  // ?restore=BASE64 → pre-fill form from encoded data (used in Slack link-back)
+  const restoreParam = params.get('restore');
+  if (restoreParam) {
+    try {
+      const data = JSON.parse(decodeURIComponent(escape(atob(restoreParam))));
+      localStorage.setItem('dpia_draft', JSON.stringify(data));
+      history.replaceState(null, '', window.location.pathname);
+      showToast('📋 DPIA loaded — complete the legal sections');
+    } catch(e) {}
+  }
+
+  initRisks();
+  addDataRow(); // one blank data row to start
+  addFlowRow(); // one blank flow row to start
+  loadLocal();
+  updateProgress();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// ── Global floating tooltip ────────────────────────────────────────────────
+// Works on every element type including <input>, <select>, table cells.
+(function () {
+  const tt = document.createElement('div');
+  tt.id = 'global-tt';
+  document.body.appendChild(tt);
+
+  let hideTimer;
+
+  function showTT(text, e) {
+    clearTimeout(hideTimer);
+    tt.textContent = text;
+    tt.style.display = 'block';
+    requestAnimationFrame(() => { tt.style.opacity = '1'; });
+    moveTT(e);
+  }
+
+  function hideTT() {
+    tt.style.opacity = '0';
+    hideTimer = setTimeout(() => { tt.style.display = 'none'; }, 180);
+  }
+
+  function moveTT(e) {
+    const pad = 14;
+    const tw  = tt.offsetWidth  || 200;
+    const th  = tt.offsetHeight || 40;
+    let x = e.clientX + pad;
+    let y = e.clientY - th - pad;
+    if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - pad;
+    if (y < 8)                           y = e.clientY + pad;
+    tt.style.left = x + 'px';
+    tt.style.top  = y + 'px';
+  }
+
+  document.addEventListener('mouseover', function (e) {
+    const el = e.target.closest('[data-tooltip]');
+    if (el) showTT(el.getAttribute('data-tooltip'), e);
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (tt.style.opacity === '1') moveTT(e);
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    if (!e.relatedTarget || !e.relatedTarget.closest('[data-tooltip]')) hideTT();
+  });
+})();
+</script>
+</body>
+</html>
