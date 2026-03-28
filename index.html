@@ -3072,8 +3072,7 @@ function initRisks() {
 }
 
 function init() {
-  console.log('DPIA_DEBUG_START: URL =', window.location.href, 'search =', window.location.search);
-  // Cache webhook FIRST, before any replaceState strips the URL params
+    // Cache webhook FIRST, before any replaceState strips the URL params
   getWebhook();
 
   const params = new URLSearchParams(window.location.search);
@@ -3086,15 +3085,13 @@ function init() {
   }
 
   // ?restore=BASE64 → pre-fill form from encoded data (used in Slack link-back)
+  let restoreData = null;
   const restoreParam = params.get('restore');
-
-  console.log('DPIA_DEBUG: restore param =', restoreParam, 'URL =', window.location.href);
   if (restoreParam) {
     try {
-      const data = JSON.parse(decodeURIComponent(escape(atob(restoreParam))));
-      localStorage.setItem('dpia_draft', JSON.stringify(data));
+      restoreData = JSON.parse(decodeURIComponent(escape(atob(restoreParam))));
+      localStorage.setItem('dpia_draft', JSON.stringify(restoreData));
       history.replaceState(null, '', window.location.pathname);
-      showToast('📋 DPIA loaded — complete the legal sections');
     } catch(e) {}
   }
 
@@ -3102,6 +3099,18 @@ function init() {
   addDataRow(); // one blank data row to start
   addFlowRow(); // one blank flow row to start
   loadLocal();
+
+  // Apply restore data DIRECTLY to form fields (belt-and-suspenders approach)
+  if (restoreData) {
+    Object.entries(restoreData).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el && el.type !== 'checkbox') el.value = val;
+    });
+    // Re-save to localStorage so draft reflects the restored data
+    localStorage.setItem('dpia_draft', JSON.stringify(gatherData()));
+    showToast('\ud83d\udccb DPIA loaded \u2014 complete the legal sections');
+  }
+
   updateProgress();
 }
 
