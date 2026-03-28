@@ -954,24 +954,6 @@
         </div>
       </div>
 
-      <div class="card card-owner">
-        <div class="card-title">Third Party Data Flows <span class="role-chip chip-owner">👤 Business Owner</span></div>
-        <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;">List any vendors, partners, or tools that will receive or process this data (e.g. Salesforce, Facebook, AWS). Leave blank if none.</p>
-        <table class="flows-table" id="flows-table">
-          <thead>
-            <tr>
-              <th style="width:25%">Recipient / Vendor</th>
-              <th style="width:20%">Role</th>
-              <th style="width:25%">Transfer Mechanism</th>
-              <th style="width:22%">DPA / Contract</th>
-              <th style="width:8%"></th>
-            </tr>
-          </thead>
-          <tbody id="flows-tbody"></tbody>
-        </table>
-        <button class="add-row-btn" onclick="addFlowRow()">+ Add third party</button>
-      </div>
-
       <div style="margin: 32px 0 8px;">
         <button class="submit-legal-btn" id="submit-legal-btn" onclick="submitToLegal()">
           ✉ Submit to Legal for Review
@@ -1061,6 +1043,25 @@
             <strong>⚠ Cross-context advertising detected</strong> — Based on your description, this processing may qualify as "selling or sharing" under CCPA/CPRA. You are required to: (1) disclose this in your privacy policy, (2) provide a clear "Do Not Sell or Share My Personal Information" opt-out link, and (3) honour opt-out requests within 15 business days. Select your opt-out status above.
           </div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Third Party Data Flows <span class="role-chip chip-legal">⚖ Legal / DPO</span></div>
+        <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px;">Vendors listed by the business owner are shown below. Complete the role, transfer mechanism, and DPA status for each.</p>
+        <button class="btn btn-ghost btn-sm" onclick="syncVendorsToFlows()" style="margin-bottom:12px;font-size:11.5px;">🔄 Sync vendors from Scope</button>
+        <table class="flows-table" id="flows-table">
+          <thead>
+            <tr>
+              <th style="width:25%">Recipient / Vendor</th>
+              <th style="width:20%">Role</th>
+              <th style="width:25%">Transfer Mechanism</th>
+              <th style="width:22%">DPA / Contract</th>
+              <th style="width:8%"></th>
+            </tr>
+          </thead>
+          <tbody id="flows-tbody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addFlowRow()">+ Add third party</button>
       </div>
 
       <div class="nav-actions">
@@ -2695,6 +2696,60 @@ function addFlowRow() {
   `;
 }
 
+// ── Sync vendors from Scope to Third Party Flows ─────────────────────────
+function syncVendorsToFlows() {
+  const vendorInput = document.getElementById('scope-vendors');
+  if (!vendorInput || !vendorInput.value.trim()) {
+    showToast('No vendors listed in Scope — add them first');
+    return;
+  }
+  const vendors = vendorInput.value.split(',').map(v => v.trim()).filter(Boolean);
+  const tbody = document.getElementById('flows-tbody');
+
+  // Get existing vendor names in the table
+  const existing = new Set();
+  tbody.querySelectorAll('tr').forEach(row => {
+    const name = row.querySelector('input')?.value?.trim().toLowerCase();
+    if (name) existing.add(name);
+  });
+
+  // Add rows for vendors not already in the table
+  let added = 0;
+  vendors.forEach(vendor => {
+    if (!existing.has(vendor.toLowerCase())) {
+      const row = tbody.insertRow();
+      row.innerHTML = `
+        <td><input type="text" value="${vendor}" oninput="autosave()"/></td>
+        <td><select onchange="autosave()">
+          <option value="">Select role</option>
+          <option>Processor</option>
+          <option>Joint Controller</option>
+          <option>Third Party</option>
+          <option>Sub-processor</option>
+        </select></td>
+        <td><select onchange="autosave()">
+          <option value="">Select mechanism</option>
+          <option>N/A — no international transfer</option>
+          <option>Adequacy decision</option>
+          <option>Standard Contractual Clauses (SCCs)</option>
+          <option>Binding Corporate Rules (BCRs)</option>
+          <option>UK IDTA</option>
+          <option>Other</option>
+        </select></td>
+        <td><select onchange="autosave()">
+          <option value="">Select</option>
+          <option>Yes — in place</option>
+          <option>In progress</option>
+          <option>No — required</option>
+        </select></td>
+        <td><button class="icon-btn" onclick="this.closest('tr').remove();autosave()">✕</button></td>
+      `;
+      added++;
+    }
+  });
+  if (added > 0) showToast(`✓ Added ${added} vendor(s) from Scope`);
+}
+
 // ── Summary / review ──────────────────────────────────────────────────────
 function updateSummary() {
   const pn = document.getElementById('proj-name')?.value || '—';
@@ -2799,7 +2854,8 @@ function buildCleanExport() {
     },
     scope: {
       geographic:         v('scope-geo'),
-      duration:           v('scope-dur'),
+      duration:           v('scope-dur'),,
+      recipient_vendors:  v('scope-vendors')
       estimated_subjects: v('scope-vol')
     },
     data_subjects: {
@@ -3097,7 +3153,7 @@ function init() {
 
   initRisks();
   addDataRow(); // one blank data row to start
-  addFlowRow(); // one blank flow row to start
+  
   loadLocal();
 
   // Apply restore data DIRECTLY to form fields (belt-and-suspenders approach)
