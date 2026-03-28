@@ -3072,6 +3072,7 @@ function initRisks() {
 }
 
 function init() {
+  console.log('DPIA_DEBUG_START: URL =', window.location.href, 'search =', window.location.search);
   // Cache webhook FIRST, before any replaceState strips the URL params
   getWebhook();
 
@@ -3086,6 +3087,8 @@ function init() {
 
   // ?restore=BASE64 → pre-fill form from encoded data (used in Slack link-back)
   const restoreParam = params.get('restore');
+
+  console.log('DPIA_DEBUG: restore param =', restoreParam, 'URL =', window.location.href);
   if (restoreParam) {
     try {
       const data = JSON.parse(decodeURIComponent(escape(atob(restoreParam))));
