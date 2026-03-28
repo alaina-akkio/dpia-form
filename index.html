@@ -1729,7 +1729,14 @@ function dismissSuggestion() {
 }
 
 // ── Submit to Legal ───────────────────────────────────────────────────────
-const SLACK_WEBHOOK = 'https://hooks.slack.com/services/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';
+// Webhook is passed via URL param (?wh=BASE64) and cached in localStorage.
+// Never hardcoded here — prevents GitHub/Slack from revoking it.
+const WH_KEY = 'dpia_wh';
+function getWebhook() {
+  const p = new URLSearchParams(window.location.search).get('wh');
+  if (p) { try { const u = atob(p); localStorage.setItem(WH_KEY, u); return u; } catch(e){} }
+  return localStorage.getItem(WH_KEY) || null;
+}
 
 function buildRestoreUrl() {
   try {
@@ -1812,7 +1819,12 @@ function submitToLegal() {
   };
 
   // POST to Slack (no-cors — message is delivered; response is opaque by browser design)
-  fetch(SLACK_WEBHOOK, {
+  const webhook = getWebhook();
+  if (!webhook) {
+    showToast('⚠️ Slack not configured — contact Legal');
+    return;
+  }
+  fetch(webhook, {
     method: 'POST',
     mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
