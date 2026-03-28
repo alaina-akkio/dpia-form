@@ -3072,6 +3072,9 @@ function initRisks() {
 }
 
 function init() {
+  // Cache webhook FIRST, before any replaceState strips the URL params
+  getWebhook();
+
   const params = new URLSearchParams(window.location.search);
 
   // ?new=1 → wipe saved draft so every new user starts fresh
