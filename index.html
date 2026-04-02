@@ -783,7 +783,7 @@
       <span class="topbar-meta">GDPR Art. 35 · CCPA / CPRA</span>
     </div>
     <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Save to Drive</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ Download JSON</button>
       <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print</button>
     </div>
   </div>
@@ -1425,7 +1425,7 @@
 
       <div class="export-actions">
         <button class="btn btn-primary" onclick="exportRegisterRow()">📊 Export Register Row</button>
-        <button class="btn btn-ghost" onclick="exportJSON()">⬇ Save to Drive (.txt)</button>
+        <button class="btn btn-ghost" onclick="exportJSON()">⬇ Download JSON</button>
         <button class="btn btn-ghost" onclick="window.print()">🖨 Print / Save PDF</button>
         <button class="btn btn-ghost" onclick="copyText()">📋 Copy Summary</button>
       </div>
@@ -3000,16 +3000,16 @@ signoff_security: ${fmt(d.sign_offs.security.name)} on ${fmt(d.sign_offs.securit
 
 function exportJSON() {
   const data = buildCleanExport();
-  const text = buildTextExport(data);
-  const blob = new Blob([text], { type: 'text/plain' });
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
   const proj = data.project.name || 'DPIA';
-  a.download = proj.replace(/[^a-z0-9]/gi, '_') + '_DPIA.txt';
+  a.download = proj.replace(/[^a-z0-9]/gi, '_') + '_DPIA_' + (data._meta?.exported_date || new Date().toISOString().slice(0,10)) + '.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('✓ Exported — save to your Google Drive "DPIA" folder');
+  showToast('✓ JSON exported — drag into your Google Drive "DPIAs (reviewed)" folder');
 }
 
 function copyText() {
