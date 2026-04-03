@@ -612,6 +612,11 @@
   .chip-owner { background: #10b98118; color: #10b981; border: 1px solid #10b98130; }
   .chip-legal { background: #5b6cf918; color: #8b96fb; border: 1px solid #5b6cf930; }
 
+  /* Privacy by design checkboxes */
+  .pbd-cb { display:flex; align-items:flex-start; gap:8px; font-size:12.5px; color:var(--text-2); padding:3px 0; cursor:pointer; line-height:1.4; }
+  .pbd-cb input[type=checkbox] { margin-top:2px; accent-color:var(--accent); flex-shrink:0; }
+  .pbd-cb:hover { color:var(--text); }
+
   /* Nav role dots */
   .nav-role { display:inline-block; width:7px; height:7px; border-radius:50%; margin-left:auto; flex-shrink:0; }
   .nav-role-owner { background: #10b981; }
@@ -1004,6 +1009,7 @@
             <label>GDPR legal basis (Art. 6) <span class="req">*</span></label>
             <select id="purp-gdpr" onchange="this.dataset.edited='1'; autosave(); toggleLIField()">
               <option value="">Select basis</option>
+              <option>N/A — US data only (GDPR does not apply)</option>
               <option>Consent (Art. 6(1)(a))</option>
               <option>Contract (Art. 6(1)(b))</option>
               <option>Legal obligation (Art. 6(1)(c))</option>
@@ -1128,14 +1134,57 @@
           </select>
         </div>
         <div class="field">
-          <label>Privacy by design measures implemented</label>
-          <textarea id="nec-pbd" placeholder="e.g. pseudonymization, anonymization, access controls, encryption, data minimization at collection point…" oninput="autosave()"></textarea>
-          <div class="inline-suggest" id="pbd-suggest-wrap">
-            <span class="is-spark">🛡</span>
-            <span class="is-text" id="pbd-suggest-text"></span>
-            <button class="is-apply" onclick="applyPBDSuggestion()">Apply ↗</button>
-            <button class="is-dismiss" onclick="document.getElementById('pbd-suggest-wrap').classList.remove('visible')">✕</button>
+          <label>Privacy by design measures implemented <span class="hint">— uncheck any that do not apply to this project</span></label>
+          <div id="pbd-checks" style="display:grid; grid-template-columns:1fr; gap:2px; margin:8px 0 4px; max-height:400px; overflow-y:auto; padding:12px; background:var(--surface2); border:1px solid var(--border); border-radius:7px;">
+            <div style="font-weight:600; color:var(--accent); margin-bottom:4px; font-size:13px;">Data Minimization &amp; Purpose Limitation</div>
+            <label class="pbd-cb"><input type="checkbox" value="Data processed only for specific purposes defined in agreement and customer instructions (DPA §3.2)" checked onchange="autosave()"> Data processed only for defined purposes (DPA §3.2)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Access to PHI/sensitive data limited to minimum necessary (Privacy Use & Disclosure Policy)" checked onchange="autosave()"> Access limited to minimum necessary (Minimum Necessary Standard)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Data retention tied to account lifecycle; deleted within 2 days of voluntary closure (Data Retention Policy)" checked onchange="autosave()"> Retention tied to account lifecycle; 2-day deletion (Data Retention Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="De-identification procedures available to remove direct identifiers (Data Classification Policy)" checked onchange="autosave()"> De-identification procedures available (Data Classification Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Access Control &amp; Least Privilege</div>
+            <label class="pbd-cb"><input type="checkbox" value="Role-based access control (RBAC) enforced based on principle of least privilege (System Access Control Policy)" checked onchange="autosave()"> RBAC enforced — least privilege (System Access Control Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Production access disabled by default; granted only through formal approval with temporary windows (Data Protection Policy)" checked onchange="autosave()"> Production access disabled by default; formal approval required (Data Protection Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Data classification-based access tiers; Restricted data requires CISO approval (System Access Control Policy)" checked onchange="autosave()"> Classification-based access tiers; CISO approval for Restricted (System Access Control Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Quarterly access reviews with 5-business-day remediation (System Access Control Policy)" checked onchange="autosave()"> Quarterly access reviews with 5-day remediation (System Access Control Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Access revoked within 24 hours of termination (System Access Control Policy)" checked onchange="autosave()"> Access revoked within 24h of termination (System Access Control Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Encryption &amp; Data Protection</div>
+            <label class="pbd-cb"><input type="checkbox" value="AES-256 encryption at rest for all production data (Encryption Policy)" checked onchange="autosave()"> AES-256 encryption at rest (Encryption Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="TLS 1.2+ encryption in transit for all data transmissions (Encryption Policy)" checked onchange="autosave()"> TLS 1.2+ encryption in transit (Encryption Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Key management through AWS KMS and GCP Cloud KMS with automatic rotation ≥12 months (Encryption Policy)" checked onchange="autosave()"> Key management via AWS KMS / GCP Cloud KMS; auto-rotation ≥12 months (Encryption Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Restricted and Confidential data prohibited from unencrypted messaging (Data Protection Policy)" checked onchange="autosave()"> Restricted/Confidential data prohibited from unencrypted messaging (Data Protection Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Data Separation &amp; Segmentation</div>
+            <label class="pbd-cb"><input type="checkbox" value="Customer data logically separated at database level using unique customer identifiers (Data Protection Policy)" checked onchange="autosave()"> Logical data separation at DB level (Data Protection Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="API-layer separation; clients authenticate with unique identifier embedded in access token (Data Protection Policy)" checked onchange="autosave()"> API-layer separation; unique ID in access token (Data Protection Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Dev, staging, and production environments segregated (SDLC Policy)" checked onchange="autosave()"> Dev/staging/production environments segregated (SDLC Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Production data not used in testing without tokenization/anonymization and separate authorization (SDLC Policy)" checked onchange="autosave()"> No production data in testing without anonymization (SDLC Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Transparency &amp; Individual Rights</div>
+            <label class="pbd-cb"><input type="checkbox" value="Privacy Statement published with clear disclosures on data collection, use, sharing, retention (Privacy Statement)" checked onchange="autosave()"> Published Privacy Statement with full disclosures (Privacy Statement)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Individual rights supported: access, correction, deletion, portability, opt-out (Privacy Statement)" checked onchange="autosave()"> Individual rights: access, correction, deletion, portability, opt-out (Privacy Statement)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Opt-out mechanism for targeted advertising via online form and email (Privacy Statement)" checked onchange="autosave()"> Opt-out mechanism for targeted advertising (Privacy Statement)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Logging, Monitoring &amp; Accountability</div>
+            <label class="pbd-cb"><input type="checkbox" value="Comprehensive audit logging of all access to sensitive data (Logging & Monitoring Policy)" checked onchange="autosave()"> Comprehensive audit logging of sensitive data access (Logging &amp; Monitoring Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Logs protected against tampering; admins cannot erase own activity logs (Logging & Monitoring Policy)" checked onchange="autosave()"> Tamper-proof logs (Logging &amp; Monitoring Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Security event logs retained min 90 days online, 1 year archived (Logging & Monitoring Policy)" checked onchange="autosave()"> Log retention: 90 days online, 1 year archived (Logging &amp; Monitoring Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Vendor &amp; Subprocessor Controls</div>
+            <label class="pbd-cb"><input type="checkbox" value="Vendor risk assessments and due diligence before system access or data sharing (Vendor Management Policy)" checked onchange="autosave()"> Vendor risk assessments before data access (Vendor Management Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Subprocessor list maintained with advance notification of changes (DPA §4.3)" checked onchange="autosave()"> Subprocessor list maintained; advance change notification (DPA §4.3)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Contractual requirements for equivalent security/privacy standards on all subprocessors (DPA §4.2)" checked onchange="autosave()"> Subprocessor contracts require equivalent standards (DPA §4.2)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Secure Development</div>
+            <label class="pbd-cb"><input type="checkbox" value="Security requirements integrated from initial requirements through deployment (SDLC Policy)" checked onchange="autosave()"> Security integrated across SDLC (SDLC Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Mandatory code review by someone other than the author (SDLC Policy)" checked onchange="autosave()"> Mandatory code review by non-author (SDLC Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="OWASP Top 10 and SANS Top 25 coverage required for all deployed software (SDLC Policy)" checked onchange="autosave()"> OWASP Top 10 / SANS Top 25 coverage (SDLC Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Automated dependency scanning via Dependabot; continuous vulnerability scanning via Intruder.io (Vulnerability Management Policy)" checked onchange="autosave()"> Automated dependency &amp; vulnerability scanning (Vulnerability Management Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Incident Response &amp; Breach Management</div>
+            <label class="pbd-cb"><input type="checkbox" value="Formal incident response plan with severity classification and defined SLAs (Incident Response Plan)" checked onchange="autosave()"> Formal incident response plan with SLAs (Incident Response Plan)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Breach notification within 60 days (HIPAA) / 72 hours (GDPR DPA §7.1)" checked onchange="autosave()"> Breach notification: 60 days HIPAA / 72h GDPR (Breach Notification Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Post-incident root cause analysis and lessons learned process (Incident Response Plan)" checked onchange="autosave()"> Post-incident root cause analysis (Incident Response Plan)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Breach log maintained for all incidents with 6-year retention (Breach Notification Policy)" checked onchange="autosave()"> Breach log with 6-year retention (Breach Notification Policy)</label>
+            <div style="font-weight:600; color:var(--accent); margin:8px 0 4px; font-size:13px;">Training &amp; Data Disposal</div>
+            <label class="pbd-cb"><input type="checkbox" value="Security awareness training required at onboarding and annually (Information Security Policy)" checked onchange="autosave()"> Security awareness training at onboarding &amp; annually (Information Security Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Secure media sanitization: clearing, purging, cryptographic erase, destruction (Asset Management Policy)" checked onchange="autosave()"> Secure media sanitization procedures (Asset Management Policy)</label>
+            <label class="pbd-cb"><input type="checkbox" value="Customer data permanently deleted within defined timelines upon account closure (Data Retention Policy; DPA §9)" checked onchange="autosave()"> Data deleted on account closure per defined timelines (Data Retention Policy; DPA §9)</label>
           </div>
+          <textarea id="nec-pbd" placeholder="Additional measures not listed above…" oninput="autosave()" style="margin-top:6px; min-height:60px;"></textarea>
         </div>
         <div class="field">
           <label>CCPA data minimization / purpose limitation</label>
@@ -1283,7 +1332,9 @@
           <input type="text" id="consult-others" placeholder="e.g. IT Security, Legal, Product, HR, Finance" oninput="autosave()" />
         </div>
         <div class="field">
-          <label>Supervisory authority consultation required? (Art. 36)</label>
+          <label>Supervisory authority (SA) consultation required? (Art. 36)
+            <span class="hint">— Under GDPR Art. 36, if residual risk is very high and cannot be mitigated, you must consult your supervisory authority (e.g. ICO, CNIL) before proceeding. N/A for US-only processing.</span>
+          </label>
           <select id="consult-sa" onchange="autosave()">
             <option value="">Select</option>
             <option>No — residual risk is acceptable</option>
@@ -2870,6 +2921,21 @@ function buildCleanExport() {
     },
     data_inventory: dataInventory,
     third_party_flows: thirdParties,
+    necessity_proportionality: {
+      necessary:          v('nec-necessary'),
+      necessity_explanation: v('nec-nec-exp'),
+      alternatives_considered: v('nec-alt'),
+      alternatives_explanation: v('nec-alt-exp'),
+      data_minimized:     v('nec-min'),
+      privacy_by_design_measures: (function() {
+        const checked = [];
+        document.querySelectorAll('#pbd-checks input[type=checkbox]:checked').forEach(cb => checked.push(cb.value));
+        const extra = (document.getElementById('nec-pbd')?.value || '').trim();
+        if (extra) checked.push(extra);
+        return checked;
+      })(),
+      ccpa_minimization:  v('nec-ccpa-min')
+    },
     legal_basis: {
       gdpr_basis:         v('purp-gdpr'),
       ccpa_purpose:       v('purp-ccpa'),
@@ -2958,6 +3024,18 @@ ${dataLines || '  (none recorded)'}
 THIRD PARTY DATA FLOWS
 ════════════════════════════════════════════
 ${flowLines || '  (none recorded)'}
+
+════════════════════════════════════════════
+NECESSITY & PROPORTIONALITY
+════════════════════════════════════════════
+processing_necessary: ${fmt(d.necessity_proportionality.necessary)}
+necessity_explanation: ${fmt(d.necessity_proportionality.necessity_explanation)}
+alternatives_considered: ${fmt(d.necessity_proportionality.alternatives_considered)}
+alternatives_explanation: ${fmt(d.necessity_proportionality.alternatives_explanation)}
+data_minimized: ${fmt(d.necessity_proportionality.data_minimized)}
+ccpa_minimization: ${fmt(d.necessity_proportionality.ccpa_minimization)}
+privacy_by_design_measures:
+${(d.necessity_proportionality.privacy_by_design_measures || []).map(m => '  • ' + m).join('\n') || '  (none)'}
 
 ════════════════════════════════════════════
 LEGAL BASIS
