@@ -1802,24 +1802,29 @@ function buildRestoreUrl() {
     const base = (window.location.protocol !== 'file:')
       ? window.location.origin + window.location.pathname
       : null;
-    return base ? `${base}?restore=${encoded}` : null;
+    if (!base) return null;
+    const url = `${base}?restore=${encoded}`;
+    // Slack blocks have a ~3000 char text limit; skip restore URL if too long
+    if (url.length > 2500) return null;
+    return url;
   } catch(e) { return null; }
 }
 
 function submitToLegal() {
   const d = buildCleanExport();
+  const trunc = (s, max) => s && s.length > max ? s.slice(0, max) + '…' : s;
   const pn  = d.project.name        || '(unnamed project)';
   const own = d.project.business_owner || '(no name)';
   const dt  = d.project.start_date   || '(no date)';
   const tri = d.project.trigger_reason || '—';
-  const desc = d.project.description  || '—';
+  const desc = trunc(d.project.description, 500)  || '—';
   const geo  = d.scope.geographic     || '—';
   const dur  = d.scope.duration       || '—';
   const vol  = d.scope.estimated_subjects || '—';
   const dsVuln = d.data_subjects.vulnerable_groups || '—';
 
   const dataLines = d.data_inventory.length
-    ? d.data_inventory.map(r => `• ${r.data_type} (${r.sensitivity} sensitivity, retained: ${r.retention})`).join('\n')
+    ? trunc(d.data_inventory.map(r => `• ${r.data_type} (${r.sensitivity} sensitivity, retained: ${r.retention})`).join('\n'), 800)
     : '(none entered)';
 
   const flowLines = d.third_party_flows.length
