@@ -1335,7 +1335,7 @@
           <label>Supervisory authority (SA) consultation required? (Art. 36)
             <span class="hint">— Under GDPR Art. 36, if residual risk is very high and cannot be mitigated, you must consult your supervisory authority (e.g. ICO, CNIL) before proceeding. N/A for US-only processing.</span>
           </label>
-          <select id="consult-sa" onchange="autosave()">
+          <select id="consult-sa" onchange="autoFillSARef(); autosave()">
             <option value="">Select</option>
             <option>No — residual risk is acceptable</option>
             <option>Yes — consultation initiated</option>
@@ -3128,6 +3128,15 @@ function exportRegisterRow() {
 function copyRegisterRow() {
   const text = document.getElementById('register-row-text')?.value || '';
   navigator.clipboard.writeText(text).then(() => showToast('✓ Copied to clipboard'));
+}
+
+function autoFillSARef() {
+  const sa  = document.getElementById('consult-sa');
+  const ref = document.getElementById('consult-sa-ref');
+  if (!sa || !ref) return;
+  if (sa.value.startsWith('No') && !ref.dataset.edited) {
+    ref.value = 'N/A';
+  }
 }
 
 function autoSetReviewDate() {
